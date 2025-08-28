@@ -77,8 +77,13 @@ export const isAgentExtractModelValid = (x: string | undefined) =>
 function validateSchemaForOpenAI(schema: any): boolean {
   if (!schema || typeof schema !== 'object') return true;
   
+  const visited = new WeakSet();
+  
   function hasInvalidStructure(obj: any): boolean {
     if (typeof obj !== 'object' || obj === null) return false;
+    
+    if (visited.has(obj)) return false;
+    visited.add(obj);
     
     if (obj.hasOwnProperty('additionalProperties')) return true;
     
