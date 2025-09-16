@@ -16,6 +16,7 @@ kubectl apply -f playwright-service.yaml
 kubectl apply -f api.yaml
 kubectl apply -f worker.yaml
 kubectl apply -f nuq-worker.yaml
+kubectl apply -f nuq-postgres.yaml
 kubectl apply -f redis.yaml
 ```
 
@@ -33,5 +34,6 @@ kubectl delete -f playwright-service.yaml
 kubectl delete -f api.yaml
 kubectl delete -f worker.yaml
 kubectl delete -f nuq-worker.yaml
+kubectl delete -f nuq-postgres.yaml
 kubectl delete -f redis.yaml
 ```
