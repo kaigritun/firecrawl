@@ -26,10 +26,7 @@ spec:
             - name: POSTGRES_USER
               value: "{{ .Values.nuqPostgres.auth.username | default "postgres" }}"
             - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "firecrawl.fullname" . }}-secret
-                  key: POSTGRES_PASSWORD
+              value: "password"
             - name: POSTGRES_DB
               value: "{{ .Values.nuqPostgres.auth.database | default "postgres" }}"
           ports:
