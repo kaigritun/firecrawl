@@ -238,6 +238,10 @@ export interface CrawlParams {
   allowSubdomains?: boolean;
   maxConcurrency?: number;
   zeroDataRetention?: boolean;
+  /**
+   * Timeout in milliseconds for the HTTP request.
+   */
+  timeout?: number;
 }
 
 /**
@@ -348,6 +352,10 @@ export interface ExtractParams<LLMSchema extends zt.ZodSchema = any> {
   showSources?: boolean;
   scrapeOptions?: CrawlScrapeOptions;
   agent?: AgentOptionsExtract;
+  /**
+   * Timeout in milliseconds for the HTTP request.
+   */
+  timeout?: number;
 }
 
 /**
