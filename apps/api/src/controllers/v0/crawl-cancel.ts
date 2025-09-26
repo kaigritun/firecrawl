@@ -65,7 +65,7 @@ export async function crawlCancelController(req: Request, res: Response) {
         });
       }
     } catch (error) {
-      logger.error("Error checking crawl completion status", error);
+      logger.error("Error checking crawl completion status", { error });
     }
 
     try {
