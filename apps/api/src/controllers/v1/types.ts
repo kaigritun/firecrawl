@@ -773,7 +773,7 @@ export type ScrapeRequestInput = z.input<typeof scrapeRequestSchema>;
 
 export const batchScrapeRequestSchema = baseScrapeOptions
   .extend({
-    urls: url.array(),
+    urls: url.array().min(1),
     origin: z.string().optional().default("api"),
     integration: integrationSchema.optional().transform(val => val || null),
     webhook: webhookSchema.optional(),
@@ -790,7 +790,7 @@ export const batchScrapeRequestSchema = baseScrapeOptions
 
 export const batchScrapeRequestSchemaNoURLValidation = baseScrapeOptions
   .extend({
-    urls: z.string().array(),
+    urls: z.string().array().min(1),
     origin: z.string().optional().default("api"),
     integration: integrationSchema.optional().transform(val => val || null),
     webhook: webhookSchema.optional(),
@@ -1018,6 +1018,7 @@ export type Document = {
     cachedAt?: string;
     creditsUsed?: number;
     postprocessorsUsed?: string[];
+    indexId?: string; // ID used to store the document in the index (GCS)
     // [key: string]: string | string[] | number | { smartScrape: number; other: number; total: number } | undefined;
   };
   serpResults?: {

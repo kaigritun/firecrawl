@@ -45,6 +45,11 @@ export async function sendDocumentToIndex(meta: Meta, document: Document) {
     return document;
   }
 
+  // Generate indexId synchronously and set it on document immediately
+  // so it's available to other transformers (e.g., search index)
+  const indexId = crypto.randomUUID();
+  document.metadata.indexId = indexId;
+
   (async () => {
     try {
       const normalizedURL = normalizeURLForIndex(meta.url);
@@ -59,8 +64,6 @@ export async function sendDocumentToIndex(meta: Meta, document: Document) {
       const fakeDomain = meta.options.__experimental_omceDomain;
       const domainSplits = generateDomainSplits(hostname, fakeDomain);
       const domainSplitsHash = domainSplits.map(split => hashURL(split));
-
-      const indexId = crypto.randomUUID();
 
       try {
         await saveIndexToGCS(indexId, {
