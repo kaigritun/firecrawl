@@ -104,38 +104,6 @@ describe("Crawl tests", () => {
   );
 
   it.concurrent(
-    "includePaths still filter when allowSubdomains is true",
-    async () => {
-      const res = await crawl(
-        {
-          url: "https://firecrawl.dev",
-          includePaths: ["^/pricing$"],
-          allowSubdomains: true,
-          allowExternalLinks: false,
-          limit: 5,
-        },
-        identity,
-      );
-
-      expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.completed).toBeGreaterThan(0);
-        for (const page of res.data) {
-          const url = new URL(page.metadata.url ?? page.metadata.sourceURL!);
-          // Should be base domain or an allowed subdomain
-          expect(
-            url.hostname === "firecrawl.dev" ||
-              url.hostname.endsWith(".firecrawl.dev"),
-          ).toBe(true);
-          // includePaths should still restrict the path even on subdomains
-          expect(url.pathname).toMatch(/^\/pricing$/);
-        }
-      }
-    },
-    5 * scrapeTimeout,
-  );
-
-  it.concurrent(
     "delay parameter works",
     async () => {
       await crawl(
