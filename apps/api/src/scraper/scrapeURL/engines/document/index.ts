@@ -4,6 +4,7 @@ import { fetchFileToBuffer } from "../utils/downloadFile";
 import { DocumentConverter, DocumentType } from "@mendable/firecrawl-rs";
 import type { Response } from "undici";
 import { DocumentAntibotError, DocumentPrefetchFailed } from "../../error";
+import { readFile, unlink } from "node:fs/promises";
 
 const converter = new DocumentConverter();
 
@@ -88,7 +89,6 @@ export async function scrapeDocument(meta: Meta): Promise<EngineScrapeResult> {
 
   if (meta.documentPrefetch !== undefined && meta.documentPrefetch !== null) {
     // Use prefetched document
-    const { readFile } = await import("fs/promises");
     buffer = await readFile(meta.documentPrefetch.filePath);
 
     // Create a mock response object with content-type from prefetch
