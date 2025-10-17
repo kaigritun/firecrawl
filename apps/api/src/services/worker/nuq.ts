@@ -155,12 +155,35 @@ class NuQ<JobData = any, JobReturnValue = any> {
 
               const jobId = msg.properties.correlationId as string;
 
+              let shouldAck = true;
               try {
-                const jobReuslt = JSON.parse(msg.content.toString()) as {
-                  status: "completed" | "failed";
-                  result: JobReturnValue;
-                };
-                const { status, result } = jobReuslt;
+                const msgContent = msg.content.toString();
+                let status: "completed" | "failed";
+                let result: JobReturnValue | undefined;
+
+                // Handle both legacy string payloads and new JSON payloads
+                try {
+                  const jobResult = JSON.parse(msgContent) as {
+                    status: "completed" | "failed";
+                    result: JobReturnValue;
+                  };
+                  status = jobResult.status;
+                  result = jobResult.result;
+                } catch (parseError) {
+                  // Legacy format: assume the content is the status as a string
+                  if (msgContent === "completed" || msgContent === "failed") {
+                    status = msgContent as "completed" | "failed";
+                    result = undefined;
+                  } else {
+                    logger.error("Invalid NuQ RabbitMQ message format", { 
+                      error: parseError, 
+                      content: msgContent, 
+                      jobId 
+                    });
+                    shouldAck = false; // Don't ACK invalid messages to prevent job hanging
+                    return;
+                  }
+                }
 
                 if (jobId in this.listens) {
                   this.listens[jobId].forEach(listener =>
@@ -170,13 +193,16 @@ class NuQ<JobData = any, JobReturnValue = any> {
                 delete this.listens[jobId];
               } catch (error) {
                 logger.error("Error in NuQ RabbitMQ reply consumer", { error });
+                shouldAck = false; // Don't ACK on processing errors to prevent job hanging
               } finally {
-                try {
-                  if (this.listener && this.listener.type === "rabbitmq") {
-                    this.listener.channel.ack(msg);
+                if (shouldAck) {
+                  try {
+                    if (this.listener && this.listener.type === "rabbitmq") {
+                      this.listener.channel.ack(msg);
+                    }
+                  } catch (error) {
+                    logger.error("Failed to ack NuQ RabbitMQ message", { error });
                   }
-                } catch (error) {
-                  logger.error("Failed to ack NuQ RabbitMQ message", { error });
                 }
               }
             }).bind(this),
