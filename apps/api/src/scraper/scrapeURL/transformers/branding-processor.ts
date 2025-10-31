@@ -161,7 +161,7 @@ function inferPalette(
     primary,
     accent,
     background,
-    text_primary: textPrimary,
+    textPrimary: textPrimary,
     link: accent,
   };
 }
@@ -230,15 +230,15 @@ export function processRawBranding(raw: RawBrandingData): BrandingProfile {
 
   // Typography
   const typography = {
-    font_families: {
+    fontFamilies: {
       primary: raw.typography.stacks.body[0] || "system-ui, sans-serif",
       heading:
         raw.typography.stacks.heading[0] ||
         raw.typography.stacks.body[0] ||
         "system-ui, sans-serif",
     },
-    font_stacks: raw.typography.stacks,
-    font_sizes: raw.typography.sizes,
+    fontStacks: raw.typography.stacks,
+    fontSizes: raw.typography.sizes,
   };
 
   // Spacing
@@ -259,7 +259,7 @@ export function processRawBranding(raw: RawBrandingData): BrandingProfile {
   const images = {
     logo: pickLogo(raw.images),
     favicon: raw.images.find(i => i.type === "favicon")?.src || null,
-    og_image:
+    ogImage:
       raw.images.find(i => i.type === "og")?.src ||
       raw.images.find(i => i.type === "twitter")?.src ||
       null,
@@ -268,8 +268,8 @@ export function processRawBranding(raw: RawBrandingData): BrandingProfile {
   // Components (empty for now - LLM will populate)
   const components = {
     input: {
-      border_color: "#CCCCCC",
-      border_radius: borderRadius,
+      borderColor: "#CCCCCC",
+      borderRadius: borderRadius,
     },
   };
 
@@ -292,13 +292,13 @@ export function processRawBranding(raw: RawBrandingData): BrandingProfile {
     }));
 
   return {
-    color_scheme: raw.colorScheme,
+    colorScheme: raw.colorScheme,
     fonts: fontsList,
     colors: palette,
     typography,
     spacing: {
-      base_unit: baseUnit,
-      border_radius: borderRadius,
+      baseUnit: baseUnit,
+      borderRadius: borderRadius,
     },
     components,
     images,

@@ -259,19 +259,18 @@ async function deriveBrandingFromActions(
     );
 
     const llmEnhancement = await enhanceBrandingWithLLM({
-      js_analysis: jsBranding,
+      jsAnalysis: jsBranding,
       buttons: buttonSnapshots,
       screenshot: document.screenshot, // Use screenshot if available
       url: document.url || meta.url,
     });
 
     meta.logger.info("LLM enhancement complete", {
-      primary_btn_index:
-        llmEnhancement.button_classification.primary_button_index,
+      primary_btn_index: llmEnhancement.buttonClassification.primaryButtonIndex,
       secondary_btn_index:
-        llmEnhancement.button_classification.secondary_button_index,
-      button_confidence: llmEnhancement.button_classification.confidence,
-      color_confidence: llmEnhancement.color_roles.confidence,
+        llmEnhancement.buttonClassification.secondaryButtonIndex,
+      button_confidence: llmEnhancement.buttonClassification.confidence,
+      color_confidence: llmEnhancement.colorRoles.confidence,
     });
 
     // Merge JS and LLM results, using LLM's button selection
@@ -281,8 +280,11 @@ async function deriveBrandingFromActions(
       buttonSnapshots,
     );
 
-    // Clean up internal data
+    // Clean up internal data (keep for processing, hide from API response)
     delete (document.branding as any).__button_snapshots;
+    delete (document.branding as any).__framework_hints;
+    delete (document.branding as any).__llm_button_reasoning;
+    delete (document.branding as any).confidence;
   } catch (error) {
     meta.logger.error(
       "LLM branding enhancement failed, using JS analysis only",
@@ -290,8 +292,9 @@ async function deriveBrandingFromActions(
     );
     // Fallback to JS-only analysis
     document.branding = jsBranding;
-    // Clean up internal data
+    // Clean up internal data (keep for processing, hide from API response)
     delete (document.branding as any).__button_snapshots;
+    delete (document.branding as any).__framework_hints;
   }
 
   return document;
@@ -469,11 +472,22 @@ function coerceFieldsToFormats(meta: Meta, document: Document): Document {
     delete document.changeTracking.json;
   }
 
-  if (
-    !hasBranding &&
-    (meta.options.actions === undefined || meta.options.actions.length === 0)
-  ) {
+  if (meta.options.actions === undefined || meta.options.actions.length === 0) {
     delete document.actions;
+  } else if (document.actions) {
+    // Check if all action arrays are empty
+    const hasScreenshots =
+      document.actions.screenshots && document.actions.screenshots.length > 0;
+    const hasScrapes =
+      document.actions.scrapes && document.actions.scrapes.length > 0;
+    const hasJsReturns =
+      document.actions.javascriptReturns &&
+      document.actions.javascriptReturns.length > 0;
+    const hasPdfs = document.actions.pdfs && document.actions.pdfs.length > 0;
+
+    if (!hasScreenshots && !hasScrapes && !hasJsReturns && !hasPdfs) {
+      delete document.actions;
+    }
   }
 
   return document;

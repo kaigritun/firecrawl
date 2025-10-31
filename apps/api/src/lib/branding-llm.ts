@@ -7,21 +7,21 @@ import { logger } from "./logger";
 // Schema for LLM output
 const brandingEnhancementSchema = z.object({
   // Button classification - LLM picks which buttons are primary/secondary
-  button_classification: z.object({
-    primary_button_index: z
+  buttonClassification: z.object({
+    primaryButtonIndex: z
       .number()
       .describe(
         "Index of the primary CTA button in the provided list (0-based), or -1 if none found",
       ),
-    primary_button_reasoning: z
+    primaryButtonReasoning: z
       .string()
       .describe("Why this button was selected as primary"),
-    secondary_button_index: z
+    secondaryButtonIndex: z
       .number()
       .describe(
         "Index of the secondary button in the provided list (0-based), or -1 if none found",
       ),
-    secondary_button_reasoning: z
+    secondaryButtonReasoning: z
       .string()
       .describe("Why this button was selected as secondary"),
     confidence: z
@@ -32,14 +32,14 @@ const brandingEnhancementSchema = z.object({
   }),
 
   // Color role clarification
-  color_roles: z.object({
-    primary_color: z.string().nullish().describe("Main brand color (hex)"),
-    accent_color: z.string().nullish().describe("Accent/CTA color (hex)"),
-    background_color: z
+  colorRoles: z.object({
+    primaryColor: z.string().nullish().describe("Main brand color (hex)"),
+    accentColor: z.string().nullish().describe("Accent/CTA color (hex)"),
+    backgroundColor: z
       .string()
       .nullish()
       .describe("Main background color (hex)"),
-    text_primary: z.string().nullish().describe("Primary text color (hex)"),
+    textPrimary: z.string().nullish().describe("Primary text color (hex)"),
     confidence: z.number().min(0).max(1),
   }),
 
@@ -57,12 +57,12 @@ const brandingEnhancementSchema = z.object({
         ])
         .describe("Overall brand tone"),
       energy: z.enum(["low", "medium", "high"]).describe("Visual energy level"),
-      target_audience: z.string().describe("Perceived target audience"),
+      targetAudience: z.string().describe("Perceived target audience"),
     })
     .optional(),
 
   // Design system insights
-  design_system: z
+  designSystem: z
     .object({
       framework: z
         .enum([
@@ -74,7 +74,7 @@ const brandingEnhancementSchema = z.object({
           "unknown",
         ])
         .describe("Detected CSS framework"),
-      component_library: z
+      componentLibrary: z
         .string()
         .nullish()
         .describe("Detected component library (e.g., radix-ui, shadcn)"),
@@ -82,7 +82,7 @@ const brandingEnhancementSchema = z.object({
     .optional(),
 
   // Font cleaning - LLM cleans and filters font names
-  cleaned_fonts: z
+  cleanedFonts: z
     .array(
       z.object({
         family: z.string().describe("Cleaned, human-readable font name"),
@@ -113,7 +113,7 @@ export interface ButtonSnapshot {
 
 interface BrandingLLMInput {
   // JS analysis results
-  js_analysis: BrandingProfile;
+  jsAnalysis: BrandingProfile;
 
   // Button data with snapshots
   buttons: ButtonSnapshot[];
@@ -161,15 +161,15 @@ export async function enhanceBrandingWithLLM(
     logger.error("LLM branding enhancement failed", { error });
 
     return {
-      cleaned_fonts: [],
-      button_classification: {
-        primary_button_index: -1,
-        primary_button_reasoning: "LLM failed",
-        secondary_button_index: -1,
-        secondary_button_reasoning: "LLM failed",
+      cleanedFonts: [],
+      buttonClassification: {
+        primaryButtonIndex: -1,
+        primaryButtonReasoning: "LLM failed",
+        secondaryButtonIndex: -1,
+        secondaryButtonReasoning: "LLM failed",
         confidence: 0,
       },
-      color_roles: {
+      colorRoles: {
         confidence: 0,
       },
     };
@@ -177,24 +177,24 @@ export async function enhanceBrandingWithLLM(
 }
 
 function buildBrandingPrompt(input: BrandingLLMInput): string {
-  const { js_analysis, buttons, url } = input;
+  const { jsAnalysis, buttons, url } = input;
 
   let prompt = `Analyze the branding of this website: ${url}\n\n`;
 
   // Add JS analysis context
   prompt += `## JavaScript Analysis (Baseline):\n`;
-  prompt += `Color Scheme: ${js_analysis.color_scheme || "unknown"}\n`;
+  prompt += `Color Scheme: ${jsAnalysis.colorScheme || "unknown"}\n`;
 
-  if (js_analysis.colors) {
+  if (jsAnalysis.colors) {
     prompt += `Detected Colors:\n`;
-    Object.entries(js_analysis.colors).forEach(([key, value]) => {
+    Object.entries(jsAnalysis.colors).forEach(([key, value]) => {
       if (value) prompt += `- ${key}: ${value}\n`;
     });
   }
 
-  if (js_analysis.fonts && js_analysis.fonts.length > 0) {
+  if (jsAnalysis.fonts && jsAnalysis.fonts.length > 0) {
     prompt += `\nRaw Fonts (need cleaning):\n`;
-    js_analysis.fonts.forEach((font: any) => {
+    jsAnalysis.fonts.forEach((font: any) => {
       const family = typeof font === "string" ? font : font.family;
       const count = typeof font === "object" && font.count ? font.count : "";
       prompt += `- ${family}${count ? ` (used ${count}x)` : ""}\n`;
@@ -279,10 +279,10 @@ function buildBrandingPrompt(input: BrandingLLMInput): string {
 
     // Add framework hints from meta/scripts
     if (
-      (js_analysis as any).__framework_hints &&
-      (js_analysis as any).__framework_hints.length > 0
+      (jsAnalysis as any).__framework_hints &&
+      (jsAnalysis as any).__framework_hints.length > 0
     ) {
-      prompt += `Framework hints from page: ${(js_analysis as any).__framework_hints.join(", ")}\n`;
+      prompt += `Framework hints from page: ${(jsAnalysis as any).__framework_hints.join(", ")}\n`;
     }
 
     prompt += `\n**Framework Detection Patterns:**\n`;
@@ -342,7 +342,7 @@ function buildBrandingPrompt(input: BrandingLLMInput): string {
   prompt += `5. **Design System**: Based on the class patterns shown above:\n`;
   prompt += `   - **Framework**: Identify the CSS framework (tailwind/bootstrap/material/chakra/custom/unknown)\n`;
   prompt += `   - **Component Library**: Look for prefixes like \`radix-\`, \`shadcn-\`, \`headlessui-\`, or \`react-aria-\` in classes\n`;
-  prompt += `   - If using Tailwind + a component library, identify both (e.g., framework: tailwind, component_library: "radix-ui")\n\n`;
+  prompt += `   - If using Tailwind + a component library, identify both (e.g., framework: tailwind, componentLibrary: "radix-ui")\n\n`;
 
   prompt += `6. **Clean Fonts**: Return up to 5 cleaned, human-readable font names\n`;
   prompt += `   - Remove framework obfuscation (Next.js hashes, etc.)\n`;
@@ -365,33 +365,30 @@ export function mergeBrandingResults(
 
   // Override button classification if LLM found better ones
   // Use lower threshold (0.5) because LLM is better at semantic understanding
-  if (
-    llm.button_classification.confidence > 0.5 &&
-    buttonSnapshots.length > 0
-  ) {
-    const primaryIdx = llm.button_classification.primary_button_index;
-    const secondaryIdx = llm.button_classification.secondary_button_index;
+  if (llm.buttonClassification.confidence > 0.5 && buttonSnapshots.length > 0) {
+    const primaryIdx = llm.buttonClassification.primaryButtonIndex;
+    const secondaryIdx = llm.buttonClassification.secondaryButtonIndex;
 
     // Map LLM's selected buttons to component data
     if (primaryIdx >= 0 && primaryIdx < buttonSnapshots.length) {
       const primaryBtn = buttonSnapshots[primaryIdx];
       if (!merged.components) merged.components = {};
-      merged.components.button_primary = {
+      merged.components.buttonPrimary = {
         background: primaryBtn.background,
-        text_color: primaryBtn.textColor,
-        border_color: primaryBtn.borderColor || undefined,
-        border_radius: primaryBtn.borderRadius || "0px",
+        textColor: primaryBtn.textColor,
+        borderColor: primaryBtn.borderColor || undefined,
+        borderRadius: primaryBtn.borderRadius || "0px",
       };
     }
 
     if (secondaryIdx >= 0 && secondaryIdx < buttonSnapshots.length) {
       const secondaryBtn = buttonSnapshots[secondaryIdx];
       if (!merged.components) merged.components = {};
-      merged.components.button_secondary = {
+      merged.components.buttonSecondary = {
         background: secondaryBtn.background,
-        text_color: secondaryBtn.textColor,
-        border_color: secondaryBtn.borderColor || undefined,
-        border_radius: secondaryBtn.borderRadius || "0px",
+        textColor: secondaryBtn.textColor,
+        borderColor: secondaryBtn.borderColor || undefined,
+        borderRadius: secondaryBtn.borderRadius || "0px",
       };
     }
 
@@ -400,24 +397,24 @@ export function mergeBrandingResults(
       primary: {
         index: primaryIdx,
         text: primaryIdx >= 0 ? buttonSnapshots[primaryIdx]?.text : "N/A",
-        reasoning: llm.button_classification.primary_button_reasoning,
+        reasoning: llm.buttonClassification.primaryButtonReasoning,
       },
       secondary: {
         index: secondaryIdx,
         text: secondaryIdx >= 0 ? buttonSnapshots[secondaryIdx]?.text : "N/A",
-        reasoning: llm.button_classification.secondary_button_reasoning,
+        reasoning: llm.buttonClassification.secondaryButtonReasoning,
       },
     };
   }
 
   // Override colors if LLM has high confidence
-  if (llm.color_roles.confidence > 0.7) {
+  if (llm.colorRoles.confidence > 0.7) {
     merged.colors = {
       ...merged.colors,
-      primary: llm.color_roles.primary_color || merged.colors?.primary,
-      accent: llm.color_roles.accent_color || merged.colors?.accent,
-      background: llm.color_roles.background_color || merged.colors?.background,
-      text_primary: llm.color_roles.text_primary || merged.colors?.text_primary,
+      primary: llm.colorRoles.primaryColor || merged.colors?.primary,
+      accent: llm.colorRoles.accentColor || merged.colors?.accent,
+      background: llm.colorRoles.backgroundColor || merged.colors?.background,
+      textPrimary: llm.colorRoles.textPrimary || merged.colors?.textPrimary,
     };
   }
 
@@ -427,20 +424,20 @@ export function mergeBrandingResults(
   }
 
   // Add design system insights
-  if (llm.design_system) {
-    (merged as any).design_system = llm.design_system;
+  if (llm.designSystem) {
+    (merged as any).designSystem = llm.designSystem;
   }
 
   // Override fonts with LLM-cleaned versions (if provided)
-  if (llm.cleaned_fonts && llm.cleaned_fonts.length > 0) {
-    merged.fonts = llm.cleaned_fonts;
+  if (llm.cleanedFonts && llm.cleanedFonts.length > 0) {
+    merged.fonts = llm.cleanedFonts;
 
     // Helper to clean individual font name from stack
     const cleanFontName = (font: string): string => {
       const fontLower = font.toLowerCase();
 
       // Check each LLM-cleaned font to see if it matches this raw font
-      for (const cleanedFont of llm.cleaned_fonts) {
+      for (const cleanedFont of llm.cleanedFonts) {
         const cleanedLower = cleanedFont.family.toLowerCase();
 
         // Direct match
@@ -473,7 +470,7 @@ export function mergeBrandingResults(
     };
 
     // Clean font stacks by replacing obfuscated names with cleaned ones
-    if (merged.typography?.font_stacks) {
+    if (merged.typography?.fontStacks) {
       const cleanStack = (
         stack: string[] | undefined,
       ): string[] | undefined => {
@@ -489,41 +486,41 @@ export function mergeBrandingResults(
         });
       };
 
-      merged.typography.font_stacks = {
-        primary: cleanStack(merged.typography.font_stacks.primary),
-        heading: cleanStack(merged.typography.font_stacks.heading),
-        body: cleanStack(merged.typography.font_stacks.body),
-        paragraph: cleanStack(merged.typography.font_stacks.paragraph),
+      merged.typography.fontStacks = {
+        primary: cleanStack(merged.typography.fontStacks.primary),
+        heading: cleanStack(merged.typography.fontStacks.heading),
+        body: cleanStack(merged.typography.fontStacks.body),
+        paragraph: cleanStack(merged.typography.fontStacks.paragraph),
       };
     }
 
     // Also update typography section with cleaned font names
-    if (merged.typography?.font_families) {
+    if (merged.typography?.fontFamilies) {
       // Find fonts by role from LLM
-      const headingFont = llm.cleaned_fonts.find(f => f.role === "heading");
-      const bodyFont = llm.cleaned_fonts.find(f => f.role === "body");
-      const displayFont = llm.cleaned_fonts.find(f => f.role === "display");
-      const primaryFont = bodyFont || llm.cleaned_fonts[0]; // Default to first font
+      const headingFont = llm.cleanedFonts.find(f => f.role === "heading");
+      const bodyFont = llm.cleanedFonts.find(f => f.role === "body");
+      const displayFont = llm.cleanedFonts.find(f => f.role === "display");
+      const primaryFont = bodyFont || llm.cleanedFonts[0]; // Default to first font
 
       // Set primary (usually body font)
       if (primaryFont) {
-        merged.typography.font_families.primary = primaryFont.family;
+        merged.typography.fontFamilies.primary = primaryFont.family;
       }
 
       // Set heading (prefer heading role, fall back to display, then primary)
       const headingToUse = headingFont || displayFont || primaryFont;
       if (headingToUse) {
-        merged.typography.font_families.heading = headingToUse.family;
+        merged.typography.fontFamilies.heading = headingToUse.family;
       }
     }
   }
 
-  // Add confidence scores
+  // Add confidence scores (internal use only, removed from API response)
   (merged as any).confidence = {
-    buttons: llm.button_classification.confidence,
-    colors: llm.color_roles.confidence,
+    buttons: llm.buttonClassification.confidence,
+    colors: llm.colorRoles.confidence,
     overall:
-      (llm.button_classification.confidence + llm.color_roles.confidence) / 2,
+      (llm.buttonClassification.confidence + llm.colorRoles.confidence) / 2,
   };
 
   return merged;

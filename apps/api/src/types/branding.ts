@@ -1,5 +1,5 @@
 export interface BrandingProfile {
-  color_scheme?: "light" | "dark";
+  colorScheme?: "light" | "dark";
   logo?: string | null;
   fonts?: Array<{
     family: string;
@@ -10,8 +10,8 @@ export interface BrandingProfile {
     secondary?: string;
     accent?: string;
     background?: string;
-    text_primary?: string;
-    text_secondary?: string;
+    textPrimary?: string;
+    textSecondary?: string;
     link?: string;
     success?: string;
     warning?: string;
@@ -19,20 +19,20 @@ export interface BrandingProfile {
     [key: string]: string | undefined;
   };
   typography?: {
-    font_families?: {
+    fontFamilies?: {
       primary?: string;
       heading?: string;
       code?: string;
       [key: string]: string | undefined;
     };
-    font_stacks?: {
+    fontStacks?: {
       primary?: string[];
       heading?: string[];
       body?: string[];
       paragraph?: string[];
       [key: string]: string[] | undefined;
     };
-    font_sizes?: {
+    fontSizes?: {
       h1?: string;
       h2?: string;
       h3?: string;
@@ -40,12 +40,12 @@ export interface BrandingProfile {
       small?: string;
       [key: string]: string | undefined;
     };
-    line_heights?: {
+    lineHeights?: {
       heading?: number;
       body?: number;
       [key: string]: number | undefined;
     };
-    font_weights?: {
+    fontWeights?: {
       light?: number;
       regular?: number;
       medium?: number;
@@ -54,60 +54,60 @@ export interface BrandingProfile {
     };
   };
   spacing?: {
-    base_unit?: number;
+    baseUnit?: number;
     padding?: Record<string, number>;
     margins?: Record<string, number>;
-    grid_gutter?: number;
-    border_radius?: string;
+    gridGutter?: number;
+    borderRadius?: string;
     [key: string]: number | string | Record<string, number> | undefined;
   };
   components?: {
-    button_primary?: {
+    buttonPrimary?: {
       background?: string;
-      text_color?: string;
-      border_color?: string;
-      border_radius?: string;
+      textColor?: string;
+      borderColor?: string;
+      borderRadius?: string;
       [key: string]: string | undefined;
     };
-    button_secondary?: {
+    buttonSecondary?: {
       background?: string;
-      text_color?: string;
-      border_color?: string;
-      border_radius?: string;
+      textColor?: string;
+      borderColor?: string;
+      borderRadius?: string;
       [key: string]: string | undefined;
     };
     input?: {
-      border_color?: string;
-      focus_border_color?: string;
-      border_radius?: string;
+      borderColor?: string;
+      focusBorderColor?: string;
+      borderRadius?: string;
       [key: string]: string | undefined;
     };
     [key: string]: unknown;
   };
   icons?: {
     style?: string;
-    primary_color?: string;
+    primaryColor?: string;
     [key: string]: string | undefined;
   };
   images?: {
     logo?: string | null;
     favicon?: string | null;
-    og_image?: string | null;
+    ogImage?: string | null;
     [key: string]: string | null | undefined;
   };
   animations?: {
-    transition_duration?: string;
+    transitionDuration?: string;
     easing?: string;
     [key: string]: string | undefined;
   };
   layout?: {
     grid?: {
       columns?: number;
-      max_width?: string;
+      maxWidth?: string;
       [key: string]: number | string | undefined;
     };
-    header_height?: string;
-    footer_height?: string;
+    headerHeight?: string;
+    footerHeight?: string;
     [key: string]:
       | number
       | string
@@ -116,10 +116,9 @@ export interface BrandingProfile {
   };
   tone?: {
     voice?: string;
-    emoji_usage?: string;
+    emojiUsage?: string;
     [key: string]: string | undefined;
   };
-  // LLM-enhanced fields
   personality?: {
     tone:
       | "professional"
@@ -129,22 +128,7 @@ export interface BrandingProfile {
       | "minimalist"
       | "bold";
     energy: "low" | "medium" | "high";
-    target_audience: string;
-  };
-  design_system?: {
-    framework:
-      | "tailwind"
-      | "bootstrap"
-      | "material"
-      | "chakra"
-      | "custom"
-      | "unknown";
-    component_library?: string;
-  };
-  confidence?: {
-    buttons: number;
-    colors: number;
-    overall: number;
+    targetAudience: string;
   };
   [key: string]: unknown;
 }
