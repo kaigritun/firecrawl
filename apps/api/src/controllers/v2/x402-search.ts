@@ -613,11 +613,12 @@ export async function x402SearchController(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn("Invalid request body [x402]", { error: error.errors });
+      // In zod v4, ZodError uses 'issues' instead of 'errors'
+      logger.warn("Invalid request body [x402]", { error: error.issues });
       return res.status(400).json({
         success: false,
         error: "Invalid request body",
-        details: error.errors,
+        details: error.issues,
       });
     }
 

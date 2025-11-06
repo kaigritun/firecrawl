@@ -6,6 +6,7 @@ import {
   CrawlResponse,
   RequestWithAuth,
   toLegacyCrawlerOptions,
+  ScrapeOptions,
 } from "./types";
 import {
   crawlToCrawler,
@@ -63,9 +64,23 @@ export async function crawlController(
     url: undefined,
     scrapeOptions: undefined,
   };
+  // Provide default scrapeOptions if not provided - use minimal defaults that match schema
+  const v1ScrapeOptions: ScrapeOptions =
+    req.body.scrapeOptions ??
+    ({
+      formats: ["markdown"],
+      onlyMainContent: false,
+      waitFor: 0,
+      mobile: false,
+      removeBase64Images: true,
+      fastMode: false,
+      blockAds: true,
+      proxy: "auto",
+      storeInCache: true,
+    } as ScrapeOptions);
   const { scrapeOptions, internalOptions } = fromV1ScrapeOptions(
-    req.body.scrapeOptions,
-    req.body.scrapeOptions.timeout,
+    v1ScrapeOptions,
+    v1ScrapeOptions.timeout,
     req.auth.team_id,
   );
 

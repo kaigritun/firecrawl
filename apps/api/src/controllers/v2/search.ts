@@ -695,11 +695,12 @@ export async function searchController(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn("Invalid request body", { error: error.errors });
+      // In zod v4, ZodError uses 'issues' instead of 'errors'
+      logger.warn("Invalid request body", { error: error.issues });
       return res.status(400).json({
         success: false,
         error: "Invalid request body",
-        details: error.errors,
+        details: error.issues,
       });
     }
 

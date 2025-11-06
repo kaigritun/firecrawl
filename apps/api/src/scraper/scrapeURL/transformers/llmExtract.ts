@@ -270,9 +270,10 @@ export function calculateCost(
 export type GenerateCompletionsOptions = {
   model?: LanguageModel;
   logger: Logger;
-  options: Omit<JsonFormatWithOptions, "type"> & {
+  options: Omit<JsonFormatWithOptions, "type" | "schema"> & {
     systemPrompt?: string;
     temperature?: number;
+    schema?: any; // Explicitly optional to allow calls without schema
   };
   markdown?: string;
   previousWarning?: string;
@@ -316,6 +317,9 @@ export async function generateCompletions({
   let warning: string | undefined;
   let currentModel = model;
   let lastError: Error | null = null;
+
+  const modelId =
+    typeof currentModel === "string" ? currentModel : currentModel.modelId;
 
   if (markdown === undefined) {
     throw new Error("document.markdown is undefined -- this is unexpected");
@@ -389,15 +393,15 @@ export async function generateCompletions({
             ...costTrackingOptions.metadata,
             gcDetails: "no-object",
           },
-          model: currentModel.modelId,
+          model: modelId,
           cost: calculateCost(
-            currentModel.modelId,
-            result.usage?.promptTokens ?? 0,
-            result.usage?.completionTokens ?? 0,
+            modelId,
+            result.usage?.inputTokens ?? 0,
+            result.usage?.outputTokens ?? 0,
           ),
           tokens: {
-            input: result.usage?.promptTokens ?? 0,
-            output: result.usage?.completionTokens ?? 0,
+            input: result.usage?.inputTokens ?? 0,
+            output: result.usage?.outputTokens ?? 0,
           },
         });
 
@@ -406,15 +410,15 @@ export async function generateCompletions({
         return {
           extract,
           warning,
-          numTokens: result.usage?.promptTokens ?? 0,
+          numTokens: result.usage?.inputTokens ?? 0,
           totalUsage: {
-            promptTokens: result.usage?.promptTokens ?? 0,
-            completionTokens: result.usage?.completionTokens ?? 0,
+            promptTokens: result.usage?.inputTokens ?? 0,
+            completionTokens: result.usage?.outputTokens ?? 0,
             totalTokens:
-              result.usage?.promptTokens ??
-              0 + (result.usage?.completionTokens ?? 0),
+              result.usage?.inputTokens ??
+              0 + (result.usage?.outputTokens ?? 0),
           },
-          model: currentModel.modelId,
+          model: modelId,
         };
       } catch (error) {
         lastError = error as Error;
@@ -491,36 +495,36 @@ export async function generateCompletions({
                 ...costTrackingOptions.metadata,
                 gcDetails: "no-object fallback",
               },
-              model: currentModel.modelId,
+              model: modelId,
               cost: calculateCost(
-                currentModel.modelId,
-                result.usage?.promptTokens ?? 0,
-                result.usage?.completionTokens ?? 0,
+                modelId,
+                result.usage?.inputTokens ?? 0,
+                result.usage?.outputTokens ?? 0,
               ),
               tokens: {
-                input: result.usage?.promptTokens ?? 0,
-                output: result.usage?.completionTokens ?? 0,
+                input: result.usage?.inputTokens ?? 0,
+                output: result.usage?.outputTokens ?? 0,
               },
             });
 
             return {
               extract,
               warning,
-              numTokens: result.usage?.promptTokens ?? 0,
+              numTokens: result.usage?.inputTokens ?? 0,
               totalUsage: {
-                promptTokens: result.usage?.promptTokens ?? 0,
-                completionTokens: result.usage?.completionTokens ?? 0,
+                promptTokens: result.usage?.inputTokens ?? 0,
+                completionTokens: result.usage?.outputTokens ?? 0,
                 totalTokens:
-                  result.usage?.promptTokens ??
-                  0 + (result.usage?.completionTokens ?? 0),
+                  result.usage?.inputTokens ??
+                  0 + (result.usage?.outputTokens ?? 0),
               },
-              model: currentModel.modelId,
+              model: modelId,
             };
           } catch (retryError) {
             lastError = retryError as Error;
             logger.error("Failed with fallback model", {
               originalError: lastError.message,
-              model: currentModel.modelId,
+              model: modelId,
             });
             throw lastError;
           }
@@ -658,14 +662,14 @@ export async function generateCompletions({
               gcDetails: "repairConfig",
             },
             cost: calculateCost(
-              currentModel.modelId,
-              repairUsage?.promptTokens ?? 0,
-              repairUsage?.completionTokens ?? 0,
+              modelId,
+              repairUsage?.inputTokens ?? 0,
+              repairUsage?.outputTokens ?? 0,
             ),
-            model: currentModel.modelId,
+            model: modelId,
             tokens: {
-              input: repairUsage?.promptTokens ?? 0,
-              output: repairUsage?.completionTokens ?? 0,
+              input: repairUsage?.inputTokens ?? 0,
+              output: repairUsage?.outputTokens ?? 0,
             },
           });
           logger.debug("Repaired text with LLM");
@@ -739,7 +743,7 @@ export async function generateCompletions({
             : {}),
         },
       },
-      ...(currentModel.modelId.startsWith("gpt-5")
+      ...(modelId.startsWith("gpt-5")
         ? {
             temperature: 1,
           }
@@ -762,7 +766,16 @@ export async function generateCompletions({
       retryModel,
     });
 
-    let result: { object: any; usage: TokenUsage } | undefined;
+    let result:
+      | {
+          object: any;
+          usage: {
+            inputTokens?: number;
+            outputTokens?: number;
+            totalTokens?: number;
+          };
+        }
+      | undefined;
     try {
       result = await generateObject(generateObjectConfig);
       costTrackingOptions.costTracking.addCall({
@@ -773,14 +786,14 @@ export async function generateCompletions({
           gcModel: generateObjectConfig.model.modelId,
         },
         tokens: {
-          input: result.usage?.promptTokens ?? 0,
-          output: result.usage?.completionTokens ?? 0,
+          input: result.usage?.inputTokens ?? 0,
+          output: result.usage?.outputTokens ?? 0,
         },
-        model: currentModel.modelId,
+        model: modelId,
         cost: calculateCost(
-          currentModel.modelId,
-          result.usage?.promptTokens ?? 0,
-          result.usage?.completionTokens ?? 0,
+          modelId,
+          result.usage?.inputTokens ?? 0,
+          result.usage?.outputTokens ?? 0,
         ),
       });
     } catch (error) {
@@ -808,21 +821,21 @@ export async function generateCompletions({
               gcModel: retryConfig.model.modelId,
             },
             tokens: {
-              input: result.usage?.promptTokens ?? 0,
-              output: result.usage?.completionTokens ?? 0,
+              input: result.usage?.inputTokens ?? 0,
+              output: result.usage?.outputTokens ?? 0,
             },
-            model: currentModel.modelId,
+            model: modelId,
             cost: calculateCost(
-              currentModel.modelId,
-              result.usage?.promptTokens ?? 0,
-              result.usage?.completionTokens ?? 0,
+              modelId,
+              result.usage?.inputTokens ?? 0,
+              result.usage?.outputTokens ?? 0,
             ),
           });
         } catch (retryError) {
           lastError = retryError as Error;
           logger.error("Failed with fallback model", {
             originalError: lastError.message,
-            model: currentModel.modelId,
+            model: modelId,
           });
           throw lastError;
         }
@@ -840,8 +853,8 @@ export async function generateCompletions({
             result = {
               object: extract,
               usage: {
-                promptTokens: error.usage?.promptTokens ?? 0,
-                completionTokens: error.usage?.completionTokens ?? 0,
+                inputTokens: error.usage?.inputTokens ?? 0,
+                outputTokens: error.usage?.outputTokens ?? 0,
                 totalTokens: error.usage?.totalTokens ?? 0,
               },
             };
@@ -873,8 +886,11 @@ export async function generateCompletions({
     }
 
     // Since generateObject doesn't provide token usage, we'll estimate it
-    const promptTokens = result.usage?.promptTokens ?? 0;
-    const completionTokens = result.usage?.completionTokens ?? 0;
+    if (!result) {
+      throw new Error("generateObject returned undefined result");
+    }
+    const promptTokens = result.usage?.inputTokens ?? 0;
+    const completionTokens = result.usage?.outputTokens ?? 0;
 
     return {
       extract,
@@ -885,7 +901,7 @@ export async function generateCompletions({
         completionTokens,
         totalTokens: promptTokens + completionTokens,
       },
-      model: currentModel.modelId,
+      model: modelId,
     };
   } catch (error) {
     lastError = error as Error;
@@ -894,7 +910,7 @@ export async function generateCompletions({
     }
     logger.error("LLM extraction failed", {
       error: lastError,
-      model: currentModel.modelId,
+      model: modelId,
       mode,
     });
     throw lastError;
@@ -1012,7 +1028,7 @@ export async function performLLMExtract(
     // // Log token usage
     // meta.logger.info("LLM extraction token usage", {
     //   model: model,
-    //   promptTokens: totalUsage.promptTokens,
+    //   promptTokens: totalUsage.inputTokens,
     //   completionTokens: totalUsage.completionTokens,
     //   totalTokens: totalUsage.totalTokens,
     // });
