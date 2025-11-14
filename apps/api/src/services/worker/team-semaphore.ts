@@ -132,7 +132,6 @@ async function withSemaphore<T>(
   let intervalHandle: NodeJS.Timeout | null = null;
   try {
     intervalHandle = setInterval(async () => {
-      _logger.debug("semaphore_heartbeat " + teamId);
       const success = await heartbeat(teamId, holderId);
       if (!success) {
         if (intervalHandle) clearInterval(intervalHandle);
