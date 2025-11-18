@@ -8,7 +8,6 @@ class SupabaseService {
   private client: SupabaseClient | null = null;
   private rrClient: SupabaseClient | null = null;
 
-  // TODO(delong3): remove SUPABASE_ACUC_URL and SUPABASE_ACUC_SERVICE_TOKEN variables
   private acucClient: SupabaseClient | null = null;
 
   constructor() {
@@ -114,7 +113,6 @@ export const supabase_rr_service: SupabaseClient = new Proxy(serv, {
   },
 }) as unknown as SupabaseClient;
 
-// TODO(delong3): remove supabase_acuc_only_service client
 export const supabase_acuc_only_service: SupabaseClient = new Proxy(serv, {
   get: function (target, prop, receiver) {
     const client = target.getACUCOnlyClient();

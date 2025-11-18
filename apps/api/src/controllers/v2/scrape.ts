@@ -298,7 +298,7 @@ export async function scrapeController(
 
       return res.status(200).json({
         success: true,
-        data: doc!, // TODO(delong3): fix nullability
+        data: doc!,
         scrape_id: origin?.includes("website") ? jobId : undefined,
       });
     },

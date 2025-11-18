@@ -810,7 +810,7 @@ async function scrapeURLLoop(meta: Meta): Promise<ScrapeUrlResponse> {
           : warning;
     }
 
-    // TODO(delong3): for sitemap, we don't need all the transformers, need to skip unused ones
+    // NOTE: for sitemap, we don't need all the transformers, need to skip unused ones
     document = await executeTransformers(meta, document);
 
     // Set final span attributes
