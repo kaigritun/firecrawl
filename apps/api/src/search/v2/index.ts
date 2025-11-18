@@ -20,6 +20,7 @@ export async function search({
   sleep_interval = 0,
   timeout = 5000,
   type = undefined,
+  enterprise = undefined,
 }: {
   query: string;
   logger: Logger;
@@ -34,6 +35,7 @@ export async function search({
   sleep_interval?: number;
   timeout?: number;
   type?: SearchResultType | SearchResultType[];
+  enterprise?: ("default" | "anon" | "zdr")[];
 }): Promise<SearchV2Response> {
   try {
     if (process.env.FIRE_ENGINE_BETA_URL) {
@@ -46,6 +48,7 @@ export async function search({
         country,
         location,
         type,
+        enterprise,
       });
 
       return results;
