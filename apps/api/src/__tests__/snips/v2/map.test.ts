@@ -125,7 +125,7 @@ describe("Map tests", () => {
     60000,
   );
 
-  it.concurrent(
+  concurrentIf(ALLOW_TEST_SUITE_WEBSITE)(
     "handles redirects correctly",
     async () => {
       const response = await map(
