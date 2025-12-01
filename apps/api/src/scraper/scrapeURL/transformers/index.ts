@@ -71,15 +71,19 @@ async function deriveMarkdownFromHTML(
     );
   }
 
-  // Only derive markdown if markdown format is requested or if changeTracking is requested
-  // (changeTracking requires markdown)
+  // Only derive markdown if markdown format is requested or if formats that require markdown are requested:
+  // - changeTracking requires markdown
+  // - json format requires markdown (for LLM extraction)
+  // - summary format requires markdown (for summarization)
   const hasMarkdown = hasFormatOfType(meta.options.formats, "markdown");
   const hasChangeTracking = hasFormatOfType(
     meta.options.formats,
     "changeTracking",
   );
+  const hasJson = hasFormatOfType(meta.options.formats, "json");
+  const hasSummary = hasFormatOfType(meta.options.formats, "summary");
 
-  if (!hasMarkdown && !hasChangeTracking) {
+  if (!hasMarkdown && !hasChangeTracking && !hasJson && !hasSummary) {
     return document;
   }
 
