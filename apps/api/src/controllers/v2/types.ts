@@ -547,6 +547,7 @@ const baseScrapeOptions = z.strictObject({
   blockAds: z.boolean().prefault(true),
   proxy: z.enum(["basic", "stealth", "auto"]).prefault("auto"),
   maxAge: z.int().gte(0).optional(),
+  minAge: z.int().gte(0).optional(),
   storeInCache: z.boolean().prefault(true),
   // @deprecated
   __searchPreviewToken: z.string().optional(),
@@ -1475,7 +1476,7 @@ const pdfCategoryOptions = z.strictObject({
 export const searchRequestSchema = z
   .strictObject({
     query: z.string(),
-    limit: z.int().positive().finite().max(100).optional().prefault(5),
+    limit: z.int().positive().finite().max(100).optional().prefault(10),
     tbs: z.string().optional(),
     filter: z.string().optional(),
     sources: z

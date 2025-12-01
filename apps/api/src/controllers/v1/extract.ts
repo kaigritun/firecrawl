@@ -1,3 +1,4 @@
+import { v7 as uuidv7 } from "uuid";
 import { Request, Response } from "express";
 import {
   RequestWithAuth,
@@ -136,7 +137,7 @@ export async function extractController(
     }
   }
 
-  const extractId = crypto.randomUUID();
+  const extractId = uuidv7();
 
   _logger.info("Extract starting...", {
     request: req.body,
