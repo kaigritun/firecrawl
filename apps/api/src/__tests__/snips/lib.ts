@@ -1,4 +1,7 @@
+import { configDotenv } from "dotenv";
 import { config } from "../../config";
+configDotenv();
+
 import { TeamFlags } from "../../controllers/v1/types";
 
 // =========================================
