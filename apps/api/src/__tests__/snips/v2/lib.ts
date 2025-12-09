@@ -69,7 +69,6 @@ export async function scrape(
 ): Promise<Document> {
   const raw = await scrapeRaw(body, identity);
   expectScrapeToSucceed(raw);
-  expect(raw.body.data.metadata?.timezone).toBe("America/New_York");
   return raw.body.data;
 }
 

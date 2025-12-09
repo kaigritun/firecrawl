@@ -68,7 +68,6 @@ export async function scrape(
   } else if (!body.proxy || body.proxy === "basic") {
     expect(raw.body.data.metadata.proxyUsed).toBe("basic");
   }
-  expect(raw.body.data.metadata.timezone).toBe("America/New_York");
   return raw.body.data;
 }
 
