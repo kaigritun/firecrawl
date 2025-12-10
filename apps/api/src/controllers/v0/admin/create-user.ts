@@ -32,7 +32,7 @@ async function addCoupon(teamId: string, integration: any) {
 
 /**
  * Generates a synthetic email for partner integrations that don't provide real emails.
- * Format: <externalUserId>@<integration-slug>.firecrawl.dev
+ * Format: <externalUserId>@<integration-slug>.partner.firecrawl.dev
  */
 function generateSyntheticEmail(
   externalUserId: string,
@@ -40,7 +40,7 @@ function generateSyntheticEmail(
 ): string {
   // Sanitize the externalUserId to be email-safe (alphanumeric, dots, hyphens, underscores)
   const sanitizedId = externalUserId.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `${sanitizedId}@${integrationSlug}.firecrawl.dev`;
+  return `${sanitizedId}@${integrationSlug}.partner.firecrawl.dev`;
 }
 
 export async function integCreateUserController(req: Request, res: Response) {
