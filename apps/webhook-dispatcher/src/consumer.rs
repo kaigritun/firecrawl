@@ -10,6 +10,7 @@ use lapin::{
 };
 use tokio::sync::broadcast;
 use tokio::task::JoinSet;
+use tracing::{error, info, warn};
 
 const QUEUE_NAME: &str = "webhooks";
 const RETRY_QUEUE_NAME: &str = "webhooks_retry";
@@ -21,7 +22,7 @@ pub async fn run(config: Config, mut shutdown_rx: broadcast::Receiver<()>) -> Re
             if shutdown_rx.try_recv().is_ok() {
                 return Ok(());
             }
-            tracing::error!(error = %e, "Consumer error, restarting in 5s");
+            error!(error = %e, "Consumer error, restarting in 5s");
             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
         } else {
             return Ok(());
@@ -91,7 +92,7 @@ async fn run_inner(config: &Config, shutdown_rx: &mut broadcast::Receiver<()>) -
     let mut tasks = JoinSet::new();
     let max_concurrent = config.prefetch_count as usize;
 
-    tracing::info!(
+    info!(
         queue = QUEUE_NAME,
         prefetch = config.prefetch_count,
         "Consumer started"
@@ -100,7 +101,7 @@ async fn run_inner(config: &Config, shutdown_rx: &mut broadcast::Receiver<()>) -
     loop {
         tokio::select! {
             _ = shutdown_rx.recv() => {
-                tracing::info!("Shutting down consumer");
+                info!("Shutting down consumer");
                 break;
             }
 
@@ -139,11 +140,11 @@ async fn handle_result(
     match res {
         Ok((delivery, Ok(_))) => {
             if let Err(e) = delivery.ack(BasicAckOptions::default()).await {
-                tracing::error!(tag = delivery.delivery_tag, error = %e, "Ack failed");
+                error!(tag = delivery.delivery_tag, error = %e, "Ack failed");
             }
         }
         Ok((delivery, Err(e))) => {
-            tracing::error!(tag = delivery.delivery_tag, error = %e, "Processing failed, requeueing");
+            error!(tag = delivery.delivery_tag, error = %e, "Processing failed, requeueing");
             let _ = delivery
                 .nack(BasicNackOptions {
                     multiple: false,
@@ -151,7 +152,7 @@ async fn handle_result(
                 })
                 .await;
         }
-        Err(e) => tracing::error!(error = %e, "Task panicked"),
+        Err(e) => error!(error = %e, "Task panicked"),
     }
     Ok(())
 }
@@ -165,7 +166,7 @@ async fn process_message(
     let mut message: WebhookQueueMessage = match serde_json::from_slice(data) {
         Ok(m) => m,
         Err(e) => {
-            tracing::error!(error = %e, "Malformed message, discarding");
+            error!(error = %e, "Malformed message, discarding");
             return Ok(());
         }
     };
@@ -177,7 +178,7 @@ async fn process_message(
         DispatchResult::RetryableError => {
             if message.retry_count < max_retries {
                 message.retry_count += 1;
-                tracing::info!(
+                info!(
                     job_id = %message.job_id,
                     retry = message.retry_count,
                     max = max_retries,
@@ -196,7 +197,7 @@ async fn process_message(
                     .await
                     .context("Failed to publish retry")?;
             } else {
-                tracing::warn!(
+                warn!(
                     job_id = %message.job_id,
                     attempts = message.retry_count,
                     "Max retries reached, discarding"

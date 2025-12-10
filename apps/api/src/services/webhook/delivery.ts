@@ -99,8 +99,6 @@ export class WebhookSender {
         timeout_ms: this.context.v0 ? 30000 : 10000,
       };
 
-      console.log(queueMessage);
-
       try {
         await webhookQueue.publish(queueMessage);
         this.logger.info("Webhook queued for delivery", {

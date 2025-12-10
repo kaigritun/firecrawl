@@ -7,6 +7,7 @@ mod signature;
 use anyhow::Result;
 use tokio::signal;
 use tokio::sync::broadcast;
+use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -22,7 +23,7 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    tracing::info!("Starting webhook dispatcher");
+    info!("Starting webhook dispatcher");
 
     let config = config::Config::from_env()?;
     let (shutdown_tx, shutdown_rx) = broadcast::channel(1);
@@ -30,14 +31,14 @@ async fn main() -> Result<()> {
     let consumer_handle = tokio::spawn(async move { consumer::run(config, shutdown_rx).await });
 
     signal::ctrl_c().await?;
-    tracing::info!("Shutdown signal received");
+    info!("Shutdown signal received");
 
     let _ = shutdown_tx.send(());
 
     match consumer_handle.await {
-        Ok(Ok(())) => tracing::info!("Consumer shutdown successfully"),
-        Ok(Err(e)) => tracing::error!(error = %e, "Consumer exited with error"),
-        Err(e) => tracing::error!(error = %e, "Consumer panicked"),
+        Ok(Ok(())) => info!("Consumer shutdown successfully"),
+        Ok(Err(e)) => error!(error = %e, "Consumer exited with error"),
+        Err(e) => error!(error = %e, "Consumer panicked"),
     }
 
     Ok(())

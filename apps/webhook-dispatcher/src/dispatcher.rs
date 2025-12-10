@@ -5,6 +5,7 @@ use postgrest::Postgrest;
 use reqwest::{header, Client};
 use std::net::IpAddr;
 use std::time::Duration;
+use tracing::{error, info, instrument, warn};
 use url::Url;
 
 #[derive(Clone)]
@@ -58,7 +59,7 @@ impl WebhookDispatcher {
             .context("Failed to fetch HMAC secret")?;
 
         if !response.status().is_success() {
-            tracing::warn!(
+            warn!(
                 team_id = %team_id,
                 status = response.status().as_u16(),
                 "Failed to fetch HMAC secret from database"
@@ -73,14 +74,14 @@ impl WebhookDispatcher {
             .map(|s| s.to_string()))
     }
 
-    #[tracing::instrument(skip(self, message), fields(job_id = %message.job_id))]
+    #[instrument(skip(self, message), fields(job_id = %message.job_id))]
     pub async fn dispatch(&self, message: &WebhookQueueMessage) -> Result<DispatchResult> {
         let hmac_secret = self.fetch_hmac_secret(&message.team_id).await?;
 
         let url = match Url::parse(&message.webhook_url) {
             Ok(u) => u,
             Err(e) => {
-                tracing::warn!(error = %e, url = %message.webhook_url, "Invalid webhook URL");
+                warn!(error = %e, url = %message.webhook_url, "Invalid webhook URL");
                 self.log_failure(message, None, format!("Invalid URL: {}", e))
                     .await?;
                 return Ok(DispatchResult::FatalError);
@@ -90,7 +91,7 @@ impl WebhookDispatcher {
         let host = match url.host_str() {
             Some(h) => h,
             None => {
-                tracing::warn!(url = %message.webhook_url, "URL missing host");
+                warn!(url = %message.webhook_url, "URL missing host");
                 self.log_failure(message, None, "URL missing host".into())
                     .await?;
                 return Ok(DispatchResult::FatalError);
@@ -102,7 +103,7 @@ impl WebhookDispatcher {
         {
             Ok(a) => a,
             Err(e) => {
-                tracing::warn!(error = %e, host = %host, "DNS lookup failed");
+                warn!(error = %e, host = %host, "DNS lookup failed");
                 self.log_failure(message, None, format!("DNS failed: {}", e))
                     .await?;
                 return Ok(DispatchResult::FatalError);
@@ -112,7 +113,7 @@ impl WebhookDispatcher {
         let target_addr = match addrs.into_iter().find(|addr| !is_private_ip(addr.ip())) {
             Some(addr) => addr,
             None => {
-                tracing::warn!(host = %host, "Webhook URL resolved to private/blocked IP");
+                warn!(host = %host, "Webhook URL resolved to private/blocked IP");
                 self.log_failure(message, None, "Resolved to private/blocked IP".into())
                     .await?;
                 return Ok(DispatchResult::FatalError);
@@ -144,7 +145,7 @@ impl WebhookDispatcher {
             }
         }
 
-        tracing::info!(url = %url, "Sending webhook");
+        info!(url = %url, "Sending webhook");
 
         match client
             .post(url.as_str())
@@ -156,7 +157,7 @@ impl WebhookDispatcher {
             Ok(res) => {
                 let status = res.status();
                 if status.is_success() {
-                    tracing::info!(status = status.as_u16(), "Webhook delivered");
+                    info!(status = status.as_u16(), "Webhook delivered");
                     self.log_webhook(
                         message,
                         status.is_success(),
@@ -166,7 +167,7 @@ impl WebhookDispatcher {
                     .await?;
                     Ok(DispatchResult::Success)
                 } else {
-                    tracing::warn!(status = status.as_u16(), "Webhook server returned error");
+                    warn!(status = status.as_u16(), "Webhook server returned error");
                     self.log_webhook(
                         message,
                         false,
@@ -184,7 +185,7 @@ impl WebhookDispatcher {
             }
             Err(e) => {
                 let code = e.status().map(|s| s.as_u16() as i32);
-                tracing::error!(error = ?e, "Webhook delivery failed");
+                error!(error = ?e, "Webhook delivery failed");
                 self.log_webhook(message, false, code, Some(format!("{:#}", e)))
                     .await?;
                 Ok(DispatchResult::RetryableError)
@@ -230,7 +231,7 @@ impl WebhookDispatcher {
             let status_code = res.status().as_u16();
             let body = res.text().await.unwrap_or_default();
 
-            tracing::error!(
+            error!(
                 status = status_code,
                 body = %body,
                 "Failed to log webhook"
