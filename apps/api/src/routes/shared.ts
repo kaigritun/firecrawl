@@ -69,14 +69,6 @@ export function checkCreditsMiddleware(
         }
       }
 
-      const minimumSource = _minimum
-        ? "explicit_minimum_param"
-        : (req.body as any)?.limit !== undefined
-          ? "body.limit"
-          : (req.body as any)?.urls?.length
-            ? "body.urls.length"
-            : "default_1";
-
       const { success, remainingCredits, chunk } = await checkTeamCredits(
         req.acuc ?? null,
         req.auth.team_id,
@@ -108,12 +100,9 @@ export function checkCreditsMiddleware(
           {
             teamId: req.auth.team_id,
             minimum,
-            minimumSource,
             remainingCredits,
+            request: req.body,
             path: req.path,
-            method: req.method,
-            bodyLimit: (req.body as any)?.limit,
-            bodyUrlsLength: (req.body as any)?.urls?.length,
           },
         );
         if (
