@@ -991,8 +991,12 @@ export async function performLLMExtract(
       },
     };
 
-    const { extractedDataArray, warning, costLimitExceededTokenUsage } =
-      await extractData({
+    let extractedDataArray: any[] | undefined;
+    let warning: string | undefined;
+    let costLimitExceededTokenUsage: number | null = null;
+
+    try {
+      const result = await extractData({
         extractOptions: generationOptions,
         urls: [meta.rewrittenUrl ?? meta.url],
         useAgent: isAgentExtractModelValid(
@@ -1004,6 +1008,18 @@ export async function performLLMExtract(
           functionId: "performLLMExtract",
         },
       });
+      extractedDataArray = result.extractedDataArray;
+      warning = result.warning;
+      costLimitExceededTokenUsage = result.costLimitExceededTokenUsage;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      meta.logger.error("JSON extraction failed", { error: errorMessage });
+      document.warning =
+        `JSON extraction failed: ${errorMessage}` +
+        (document.warning ? " " + document.warning : "");
+      return document;
+    }
 
     if (warning) {
       document.warning =
@@ -1012,7 +1028,7 @@ export async function performLLMExtract(
 
     // IMPORTANT: here it only get's the last page!!!
     const extractedData =
-      extractedDataArray[extractedDataArray.length - 1] ?? undefined;
+      extractedDataArray?.[extractedDataArray.length - 1] ?? undefined;
 
     // // Prepare the schema, potentially wrapping it
     // const { schemaToUse, schemaWasWrapped } = prepareSmartScrapeSchema(

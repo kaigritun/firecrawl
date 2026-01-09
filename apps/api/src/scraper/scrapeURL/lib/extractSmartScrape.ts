@@ -378,7 +378,9 @@ export async function extractData({
     logger.error("failed during extractSmartScrape.ts:generateCompletions", {
       error,
     });
-    // console.log("failed during extractSmartScrape.ts:generateCompletions", error);
+    // Re-throw the error so the caller can handle it appropriately
+    // Previously this error was swallowed, causing silent extraction failures
+    throw error;
   }
 
   let extractedData = extract?.extractedData;
