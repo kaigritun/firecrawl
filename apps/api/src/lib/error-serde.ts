@@ -1,6 +1,7 @@
 import {
   CrawlDenialError,
   ErrorCodes,
+  GlobalQueueLimitExceededError,
   MapTimeoutError,
   RacedRedirectError,
   ScrapeJobTimeoutError,
@@ -47,6 +48,7 @@ const errorMap: Record<ErrorCodes, any> = {
   SCRAPE_RACED_REDIRECT_ERROR: RacedRedirectError,
   SCRAPE_SITEMAP_ERROR: SitemapError,
   CRAWL_DENIAL: CrawlDenialError,
+  GLOBAL_QUEUE_LIMIT_EXCEEDED: GlobalQueueLimitExceededError,
 
   // Zod errors
   BAD_REQUEST: null,

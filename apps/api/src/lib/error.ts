@@ -20,7 +20,8 @@ export type ErrorCodes =
   | "SCRAPE_SITEMAP_ERROR"
   | "CRAWL_DENIAL"
   | "BAD_REQUEST_INVALID_JSON"
-  | "BAD_REQUEST";
+  | "BAD_REQUEST"
+  | "GLOBAL_QUEUE_LIMIT_EXCEEDED";
 
 export class TransportableError extends Error {
   public readonly code: ErrorCodes;
@@ -181,5 +182,34 @@ export class JobCancelledError extends Error {
   constructor() {
     super("Parent crawl/batch scrape was cancelled");
     this.name = "JobCancelledError";
+  }
+}
+
+export class GlobalQueueLimitExceededError extends TransportableError {
+  constructor(
+    public currentCount: number,
+    public limit: number,
+  ) {
+    super(
+      "GLOBAL_QUEUE_LIMIT_EXCEEDED",
+      `Global concurrency queue limit exceeded. Current: ${currentCount}, Limit: ${limit}`,
+    );
+  }
+
+  serialize() {
+    return {
+      ...super.serialize(),
+      currentCount: this.currentCount,
+      limit: this.limit,
+    };
+  }
+
+  static deserialize(
+    _: ErrorCodes,
+    data: ReturnType<typeof this.prototype.serialize>,
+  ) {
+    const x = new GlobalQueueLimitExceededError(data.currentCount, data.limit);
+    x.stack = data.stack;
+    return x;
   }
 }
