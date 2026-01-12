@@ -47,6 +47,7 @@ jobs:
       PROXY_PASSWORD: ${{ matrix.proxy == 'proxy' && secrets.PROXY_PASSWORD || '' }}
       NUQ_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       NUQ_RABBITMQ_URL: amqp://localhost:5672
+      FDB_CLUSTER_FILE: /etc/foundationdb/fdb.cluster
       USE_GO_MARKDOWN_PARSER: true
       ALLOW_LOCAL_WEBHOOKS: true
       FIRECRAWL_LOG_TO_FILE: true
@@ -197,6 +198,63 @@ jobs:
           docker build -t firecrawl/nuq-postgres:latest ./apps/nuq-postgres
           docker run -d -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=postgres --name postgres firecrawl/nuq-postgres:latest
 
+      - name: Install FoundationDB client library
+        run: |
+          ARCH=$(dpkg --print-architecture)
+          if [ "$ARCH" = "amd64" ]; then
+            FDB_ARCH="x86_64"
+          elif [ "$ARCH" = "arm64" ]; then
+            FDB_ARCH="aarch64"
+          else
+            echo "Unsupported architecture: $ARCH" && exit 1
+          fi
+          curl -fsSL "https://github.com/apple/foundationdb/releases/download/7.3.69/foundationdb-clients_7.3.69-1_${FDB_ARCH}.deb" -o /tmp/fdb-clients.deb
+          sudo dpkg -i /tmp/fdb-clients.deb
+          rm /tmp/fdb-clients.deb
+
+      - name: Rebuild foundationdb native addon
+        run: pnpm rebuild foundationdb
+        working-directory: apps/api
+
+      - name: Start FoundationDB server
+        run: |
+          # Start FDB container
+          docker run -d --name foundationdb -p 4500:4500 foundationdb/foundationdb:7.3.69
+
+          # Wait for container to start
+          sleep 3
+
+          # Initialize FDB as a single-node memory cluster
+          docker exec foundationdb fdbcli --exec "configure new single memory" -C /var/fdb/fdb.cluster || true
+
+          # Wait for initialization
+          sleep 2
+
+          # Get the cluster file from the container and rewrite it for localhost access
+          FDB_CLUSTER_CONTENT=$(docker exec foundationdb cat /var/fdb/fdb.cluster)
+          echo "Original cluster file: $FDB_CLUSTER_CONTENT"
+
+          # Replace the container IP with 127.0.0.1 for host access
+          FDB_CLUSTER_LOCAL=$(echo "$FDB_CLUSTER_CONTENT" | sed 's/@[0-9.]*:4500/@127.0.0.1:4500/')
+          echo "Rewritten cluster file: $FDB_CLUSTER_LOCAL"
+
+          # Write the cluster file
+          sudo mkdir -p /etc/foundationdb
+          echo "$FDB_CLUSTER_LOCAL" | sudo tee /etc/foundationdb/fdb.cluster
+
+          # Wait for FDB to be available (with retries)
+          for i in {1..30}; do
+            if docker exec foundationdb fdbcli --exec "status minimal" -C /var/fdb/fdb.cluster 2>&1 | grep -q "The database is available"; then
+              echo "FoundationDB is ready!"
+              break
+            fi
+            echo "Waiting for FoundationDB... (attempt $i/30)"
+            sleep 2
+          done
+
+          # Verify FDB is working
+          docker exec foundationdb fdbcli --exec "status" -C /var/fdb/fdb.cluster
+
       - name: Run tests
         run: pnpm harness pnpm test:snips
         working-directory: apps/api
@@ -222,6 +280,10 @@ jobs:
       - name: Copy SearXNG logs
         if: always() && matrix.search == 'searxng'
         run: docker logs searxng > logs/searxng.log && docker kill searxng
+
+      - name: Copy FoundationDB logs
+        if: always()
+        run: docker logs foundationdb > logs/foundationdb.log 2>&1 && docker kill foundationdb || true
 
       - name: Copy Playwright logs
         if: always() && matrix.engine == 'playwright'
