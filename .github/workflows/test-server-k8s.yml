@@ -700,8 +700,8 @@ jobs:
           # Save PIDs to file for cleanup
           echo "$PF_API_PID" > /tmp/pf_pids.txt
           echo "$PF_TESTSITE_PID" >> /tmp/pf_pids.txt
-          [ -n "${PF_SEARXNG_PID:-}" ] && echo "$PF_SEARXNG_PID" >> /tmp/pf_pids.txt
-          [ -n "${PF_PLAYWRIGHT_PID:-}" ] && echo "$PF_PLAYWRIGHT_PID" >> /tmp/pf_pids.txt
+          [ -n "${PF_SEARXNG_PID:-}" ] && echo "$PF_SEARXNG_PID" >> /tmp/pf_pids.txt || true
+          [ -n "${PF_PLAYWRIGHT_PID:-}" ] && echo "$PF_PLAYWRIGHT_PID" >> /tmp/pf_pids.txt || true
 
       - name: Record test setup end / execution start
         run: |
