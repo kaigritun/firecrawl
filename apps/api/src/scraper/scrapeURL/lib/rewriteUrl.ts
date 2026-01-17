@@ -43,10 +43,28 @@ export function rewriteUrl(url: string): string | undefined {
     }
     const id = url.match(/\/spreadsheets\/d\/([-\w]+)/)?.[1];
     if (id) {
-      // Extract gid parameter from query string or hash fragment to preserve the selected tab
-      const gidMatch = url.match(/[?&#]gid=(\d+)/);
-      const gidParam = gidMatch ? `&gid=${gidMatch[1]}` : "";
-      return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:html${gidParam}`;
+      // Preserve query string parameters and check hash fragment for gid
+      const parsedUrl = new URL(url);
+      const queryParams = new URLSearchParams(parsedUrl.search);
+
+      // Also check hash fragment for gid (Google Sheets uses #gid=xxx format)
+      if (!queryParams.has("gid")) {
+        const hashGidMatch = parsedUrl.hash.match(/gid=(\d+)/);
+        if (hashGidMatch) {
+          queryParams.set("gid", hashGidMatch[1]);
+        }
+      }
+
+      // Build the export URL with tqx=out:html and preserved parameters
+      const exportUrl = new URL(
+        `https://docs.google.com/spreadsheets/d/${id}/gviz/tq`,
+      );
+      exportUrl.searchParams.set("tqx", "out:html");
+      queryParams.forEach((value, key) => {
+        exportUrl.searchParams.set(key, value);
+      });
+
+      return exportUrl.toString();
     }
   }
 

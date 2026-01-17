@@ -60,7 +60,7 @@ describe("rewriteUrl", () => {
       const url =
         "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit";
       expect(rewriteUrl(url)).toBe(
-        "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/gviz/tq?tqx=out:html",
+        "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/gviz/tq?tqx=out%3Ahtml",
       );
     });
 
@@ -68,7 +68,7 @@ describe("rewriteUrl", () => {
       const url =
         "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/edit?gid=89683736";
       expect(rewriteUrl(url)).toBe(
-        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out:html&gid=89683736",
+        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out%3Ahtml&gid=89683736",
       );
     });
 
@@ -76,15 +76,23 @@ describe("rewriteUrl", () => {
       const url =
         "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/edit#gid=89683736";
       expect(rewriteUrl(url)).toBe(
-        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out:html&gid=89683736",
+        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out%3Ahtml&gid=89683736",
       );
     });
 
-    it("should preserve gid parameter when both query and hash have gid (uses first match)", () => {
+    it("should preserve gid parameter when both query and hash have gid (prefers query string)", () => {
       const url =
         "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/edit?gid=89683736#gid=89683736";
       expect(rewriteUrl(url)).toBe(
-        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out:html&gid=89683736",
+        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out%3Ahtml&gid=89683736",
+      );
+    });
+
+    it("should preserve all query string parameters", () => {
+      const url =
+        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/edit?gid=89683736&usp=sharing";
+      expect(rewriteUrl(url)).toBe(
+        "https://docs.google.com/spreadsheets/d/1dhyxGttUbI2RlTxPXF4CQcY4TD2k6Jp7-hcqS9PP5uc/gviz/tq?tqx=out%3Ahtml&gid=89683736&usp=sharing",
       );
     });
 
