@@ -98,7 +98,9 @@ async function billScrapeJob(
 ) {
   let creditsToBeBilled: number | null = null;
 
-  if (job.data.is_scrape !== true && !job.data.internalOptions?.bypassBilling) {
+  // Always calculate credits for non-scrape jobs (e.g., search, crawl) so we can
+  // report accurate creditsUsed in the response, even when billing is bypassed
+  if (job.data.is_scrape !== true) {
     creditsToBeBilled = await calculateCreditsToBeBilled(
       job.data.scrapeOptions,
       job.data.internalOptions,
@@ -109,7 +111,9 @@ async function billScrapeJob(
       unsupportedFeatures,
     );
 
+    // Only actually bill if not bypassed
     if (
+      !job.data.internalOptions?.bypassBilling &&
       job.data.team_id !== config.BACKGROUND_INDEX_TEAM_ID! &&
       config.USE_DB_AUTHENTICATION
     ) {
@@ -141,7 +145,6 @@ async function billScrapeJob(
             priority: 10,
           },
         );
-        return creditsToBeBilled;
       } catch (error) {
         logger.error(
           `Failed to add billing job to queue for team ${job.data.team_id} for ${creditsToBeBilled} credits`,
@@ -150,7 +153,6 @@ async function billScrapeJob(
         captureExceptionWithZdrCheck(error, {
           extra: { zeroDataRetention: job.data.zeroDataRetention ?? false },
         });
-        return creditsToBeBilled;
       }
     }
   }

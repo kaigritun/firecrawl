@@ -155,7 +155,7 @@ export async function searchController(
         time_taken: timeTakenInSeconds,
         team_id: req.auth.team_id,
         options: req.body,
-        credits_cost: shouldBill ? result.searchCredits : 0,
+        credits_cost: shouldBill ? result.totalCredits : 0,
         zeroDataRetention: isZDROrAnon ?? false,
       },
       false,
