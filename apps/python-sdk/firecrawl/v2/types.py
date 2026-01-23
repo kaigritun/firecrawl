@@ -760,17 +760,12 @@ class MapOptions(BaseModel):
     timeout: Optional[int] = None
     integration: Optional[str] = None
     location: Optional["Location"] = None
-    use_mock: Optional[str] = None
-    filter_by_path: Optional[bool] = None
-    use_index: Optional[bool] = None
-    ignore_cache: Optional[bool] = None
     headers: Optional[Dict[str, str]] = None
     include_paths: Optional[List[str]] = None
     exclude_paths: Optional[List[str]] = None
     max_discovery_depth: Optional[int] = None
     crawl_entire_domain: Optional[bool] = None
     allow_external_links: Optional[bool] = None
-    allow_subdomains: Optional[bool] = None
     ignore_robots_txt: Optional[bool] = None
     deduplicate_similar_urls: Optional[bool] = None
     regex_on_full_url: Optional[bool] = None
