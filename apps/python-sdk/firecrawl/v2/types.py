@@ -231,6 +231,8 @@ class DocumentMetadata(BaseModel):
 class AgentOptions(BaseModel):
     """Configuration for the agent in extract operations."""
 
+    model_config = {"extra": "forbid"}
+
     model: Literal["FIRE-1", "v3-beta"] = "FIRE-1"
 
 
@@ -314,6 +316,8 @@ class Document(BaseModel):
 class WebhookConfig(BaseModel):
     """Configuration for webhooks."""
 
+    model_config = {"extra": "forbid"}
+
     url: str
     headers: Optional[Dict[str, str]] = None
     metadata: Optional[Dict[str, str]] = None
@@ -330,6 +334,8 @@ class AgentWebhookConfig(BaseModel):
     - failed: When the job fails
     - cancelled: When the job is cancelled
     """
+
+    model_config = {"extra": "forbid"}
 
     url: str
     headers: Optional[Dict[str, str]] = None
@@ -493,6 +499,8 @@ class ScrapeFormats(BaseModel):
 class ScrapeOptions(BaseModel):
     """Options for scraping operations."""
 
+    model_config = {"extra": "forbid"}
+
     formats: Optional[Union["ScrapeFormats", List[FormatOption]]] = None
     headers: Optional[Dict[str, str]] = None
     include_tags: Optional[List[str]] = None
@@ -566,6 +574,8 @@ class ScrapeResponse(BaseResponse[ScrapeData]):
 # Crawl types
 class CrawlRequest(BaseModel):
     """Request for crawling a website."""
+
+    model_config = {"extra": "forbid"}
 
     url: str
     prompt: Optional[str] = None
@@ -689,6 +699,8 @@ class CrawlParamsResponse(BaseResponse[CrawlParamsData]):
 class BatchScrapeRequest(BaseModel):
     """Request for batch scraping multiple URLs (internal helper only)."""
 
+    model_config = {"extra": "forbid"}
+
     urls: List[str]
     options: Optional[ScrapeOptions] = None
     webhook: Optional[Union[str, WebhookConfig]] = None
@@ -735,6 +747,8 @@ class BatchScrapeErrorsRequest(BaseModel):
 class MapOptions(BaseModel):
     """Options for mapping operations."""
 
+    model_config = {"extra": "forbid"}
+
     search: Optional[str] = None
     sitemap: Literal["only", "include", "skip"] = "include"
     include_subdomains: Optional[bool] = None
@@ -767,6 +781,8 @@ class MapResponse(BaseResponse[MapData]):
 # Extract types
 class ExtractRequest(BaseModel):
     """Request for extract operations."""
+
+    model_config = {"extra": "forbid"}
 
     urls: Optional[List[str]] = None
     prompt: Optional[str] = None
@@ -968,12 +984,16 @@ class PDFParser(BaseModel):
 class Location(BaseModel):
     """Location configuration for scraping."""
 
+    model_config = {"extra": "forbid"}
+
     country: Optional[str] = None
     languages: Optional[List[str]] = None
 
 
 class SearchRequest(BaseModel):
     """Request for search operations."""
+
+    model_config = {"extra": "forbid"}
 
     query: str
     sources: Optional[List[SourceOption]] = None
