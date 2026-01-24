@@ -99,28 +99,41 @@ export class SSLError extends TransportableError {
 export class SiteError extends TransportableError {
   constructor(public errorCode: string) {
     const errorExplanations: Record<string, string> = {
-      "net::ERR_NAME_NOT_RESOLVED":
-        "The domain name could not be resolved. The website may not exist or there may be a DNS issue.",
-      "net::ERR_CONNECTION_REFUSED":
-        "The connection was refused by the server. The website may be down or blocking connections.",
-      "net::ERR_CONNECTION_TIMED_OUT":
+      ERR_TUNNEL_CONNECTION_FAILED:
+        "Firecrawl encountered an internal proxy error while establishing the tunnel.",
+      ERR_TIMED_OUT:
         "The connection timed out. The server is not responding or is too slow.",
-      "net::ERR_SSL_PROTOCOL_ERROR":
-        "An SSL/TLS error occurred. The website's security certificate may be misconfigured.",
-      "net::ERR_CERT_AUTHORITY_INVALID":
-        "The website's SSL certificate is not trusted. Try setting skipTlsVerification: true if you trust this site.",
-      "net::ERR_TOO_MANY_REDIRECTS":
+      ERR_BLOCKED_BY_CLIENT:
+        "The request was blocked by the client, possibly due to an ad blocker or network policy.",
+      ERR_CONNECTION_CLOSED:
+        "The connection was closed unexpectedly by the server.",
+      ERR_HTTP2_PROTOCOL_ERROR:
+        "An HTTP/2 protocol error occurred. The server may have misconfigured HTTP/2.",
+      ERR_EMPTY_RESPONSE:
+        "The server closed the connection without sending any response.",
+      ERR_PROXY_CONNECTION_FAILED:
+        "Firecrawl encountered an internal proxy error while connecting to the proxy.",
+      ERR_CONNECTION_RESET:
+        "The connection was reset by the peer. The server may have dropped the connection.",
+      ERR_TOO_MANY_REDIRECTS:
         "The page has too many redirects. The website may be misconfigured.",
-      "net::ERR_ABORTED": "The request was aborted, possibly due to a timeout or the page taking too long to load.",
     };
+
+    const isProxyError =
+      errorCode === "ERR_TUNNEL_CONNECTION_FAILED" ||
+      errorCode === "ERR_PROXY_CONNECTION_FAILED";
 
     const explanation =
       errorExplanations[errorCode] ||
       "The website returned an error or could not be loaded properly.";
 
+    const followUp = isProxyError
+      ? "This is an internal Firecrawl proxy error. Please retry or contact support."
+      : "Please verify the URL is correct and the website is accessible.";
+
     super(
       "SCRAPE_SITE_ERROR",
-      `The URL failed to load in the browser with error code "${errorCode}". ${explanation} Please verify the URL is correct and the website is accessible.`,
+      `The URL failed to load in the browser with error code "${errorCode}". ${explanation} ${followUp}`,
     );
   }
 
@@ -241,7 +254,7 @@ export class PDFInsufficientTimeError extends TransportableError {
   ) {
     super(
       "SCRAPE_PDF_INSUFFICIENT_TIME_ERROR",
-      `The PDF has ${pageCount} pages, which requires more processing time than your current timeout allows. PDF processing time scales with page count - larger PDFs need longer timeouts. To successfully scrape this PDF, increase the timeout parameter in your scrape request to at least ${minTimeout}ms (${Math.ceil(minTimeout / 1000)} seconds). For very large PDFs, consider using a timeout of ${Math.ceil(minTimeout * 1.5 / 1000)} seconds or more to account for network variability.`,
+      `The PDF has ${pageCount} pages, which requires more processing time than your current timeout allows. PDF processing time scales with page count - larger PDFs need longer timeouts. To successfully scrape this PDF, increase the timeout parameter in your scrape request to at least ${minTimeout}ms (${Math.ceil(minTimeout / 1000)} seconds). For very large PDFs, consider using a timeout of ${Math.ceil((minTimeout * 1.5) / 1000)} seconds or more to account for network variability.`,
     );
   }
 
