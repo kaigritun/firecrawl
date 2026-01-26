@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import { chromium, Browser, BrowserContext, Route, Request as PlaywrightRequest, Page } from 'playwright';
 import dotenv from 'dotenv';
 import UserAgent from 'user-agents';
+import { TextDecoder } from 'util';
 import { getError } from './helpers/get_error';
 
 dotenv.config();
@@ -161,6 +162,29 @@ const isValidUrl = (urlString: string): boolean => {
   }
 };
 
+const decodeOctetStream = (buffer: Buffer): string => {
+  try {
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    if (decoded.includes('\u0000')) {
+      throw new Error('Binary content');
+    }
+    return decoded;
+  } catch {
+    return buffer.toString('base64');
+  }
+};
+
+const decodeResponseBody = (buffer: Buffer, contentType: string | undefined): string => {
+  const normalized = contentType?.toLowerCase() ?? '';
+  if (normalized.includes('application/pdf')) {
+    return buffer.toString('base64');
+  }
+  if (normalized.includes('application/octet-stream')) {
+    return decodeOctetStream(buffer);
+  }
+  return buffer.toString('utf8');
+};
+
 const scrapePage = async (
   page: Page,
   requestContext: BrowserContext,
@@ -184,10 +208,7 @@ const scrapePage = async (
     const responseHeaders = apiResponse.headers();
     const contentType = responseHeaders['content-type'];
     const buffer = await apiResponse.body();
-    const content = contentType?.includes('application/octet-stream') ||
-      contentType?.includes('application/pdf')
-      ? buffer.toString('base64')
-      : buffer.toString('utf8');
+    const content = decodeResponseBody(buffer, contentType);
 
     return {
       content,
@@ -226,11 +247,7 @@ const scrapePage = async (
         normalized.includes("application/pdf");
       if (shouldUseBody) {
         const buffer = await response.body();
-        content =
-          normalized.includes("application/octet-stream") ||
-          normalized.includes("application/pdf")
-            ? buffer.toString("base64")
-            : buffer.toString("utf8"); // TODO: determine real encoding
+        content = decodeResponseBody(buffer, normalized);
       }
     }
   }
