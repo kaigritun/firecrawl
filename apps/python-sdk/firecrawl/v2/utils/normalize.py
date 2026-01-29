@@ -68,12 +68,31 @@ def _map_metadata_keys(md: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def _map_change_tracking_keys(ct: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert API v2 camelCase change tracking keys to snake_case.
+    """
+    mapping = {
+        "changeStatus": "change_status",
+        "previousScrapeAt": "previous_scrape_at",
+        # "visibility" is already snake_case
+    }
+
+    out: Dict[str, Any] = {}
+    for k, v in ct.items():
+        snake = mapping.get(k, k)
+        out[snake] = v
+
+    return out
+
+
 def normalize_document_input(doc: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize a raw Document dict from the API into the Python SDK's expected shape:
     - Convert top-level keys rawHtml->raw_html, changeTracking->change_tracking
     - Convert metadata keys from camelCase to snake_case
     - Convert branding.colorScheme to branding.color_scheme
+    - Convert change_tracking inner keys from camelCase to snake_case
     """
     normalized = dict(doc)
 
@@ -81,7 +100,11 @@ def normalize_document_input(doc: Dict[str, Any]) -> Dict[str, Any]:
         normalized["raw_html"] = normalized.pop("rawHtml")
 
     if "changeTracking" in normalized and "change_tracking" not in normalized:
-        normalized["change_tracking"] = normalized.pop("changeTracking")
+        ct = normalized.pop("changeTracking")
+        if isinstance(ct, dict):
+            normalized["change_tracking"] = _map_change_tracking_keys(ct)
+        else:
+            normalized["change_tracking"] = ct
 
     md = normalized.get("metadata")
     if isinstance(md, dict):
