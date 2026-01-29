@@ -12,29 +12,6 @@ const useFireEngine =
   config.FIRE_ENGINE_BETA_URL !== "" &&
   config.FIRE_ENGINE_BETA_URL !== undefined;
 
-function normalizeSearchTypes(
-  type?: SearchResultType | SearchResultType[],
-): SearchResultType[] {
-  if (!type) return ["web"];
-  return Array.isArray(type) ? type : [type];
-}
-
-/**
- * Checks if the response has at least one requested type with results.
- * This allows partial results to be returned when some sources have data
- * but others don't, instead of requiring all sources to have results.
- */
-function hasAnyResults(
-  response: SearchV2Response,
-  requestedTypes: SearchResultType[],
-): boolean {
-  if (!response || Object.keys(response).length === 0) return false;
-  return requestedTypes.some(type => {
-    const results = response[type];
-    return Array.isArray(results) && results.length > 0;
-  });
-}
-
 export async function fire_engine_search_v2(
   q: string,
   options: {
@@ -69,14 +46,12 @@ export async function fire_engine_search_v2(
     enterprise: options.enterprise,
   };
 
-  const requestedTypes = normalizeSearchTypes(options.type);
   const url = `${config.FIRE_ENGINE_BETA_URL}/v2/search`;
   const data = JSON.stringify(payload);
 
   const result = await executeWithRetry<SearchV2Response>(
     () => attemptRequest<SearchV2Response>(url, data, abort),
-    (response): response is SearchV2Response =>
-      response !== null && hasAnyResults(response, requestedTypes),
+    (response): response is SearchV2Response => response !== null,
     abort,
   );
 
