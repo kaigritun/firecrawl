@@ -743,11 +743,12 @@ export const findImages = (): FindImagesResult => {
             }
           }
 
-          if (!srcMatch) srcMatch = /logo/i.test(bgImageUrl) || hasLogoDataAttr;
+          if (!srcMatch)
+            srcMatch = /logo/i.test(bgImageUrl) || !!hasLogoDataAttr;
           if (!classMatch)
             classMatch =
               el.closest('[class*="logo" i], [id*="logo" i]') !== null ||
-              hasLogoDataAttr;
+              !!hasLogoDataAttr;
           if (!altMatch && hasLogoAriaLabel) {
             altMatch = true;
             alt = parentAriaLabel;
