@@ -11,32 +11,13 @@ export const getBrandingScript = (): string => {
   }
 
   // Determine the correct path to the branding script source files
-  // When running from dist/, __dirname is dist/src/.../fire-engine
-  // When running from src/ (dev), __dirname is src/.../fire-engine
+  // Development: use .ts files directly
+  // Production (Docker): use compiled .js files in dist/
   let entryPoint = path.join(__dirname, "branding-script", "index.ts");
 
-  // If the TypeScript file doesn't exist (running from dist), resolve to src/
   if (!fs.existsSync(entryPoint)) {
-    // Navigate from dist/src/... to src/...
-    const projectRoot = path.resolve(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "..",
-      "..",
-    );
-    entryPoint = path.join(
-      projectRoot,
-      "src",
-      "scraper",
-      "scrapeURL",
-      "engines",
-      "fire-engine",
-      "branding-script",
-      "index.ts",
-    );
+    // Fall back to compiled .js files (production Docker)
+    entryPoint = path.join(__dirname, "branding-script", "index.js");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
