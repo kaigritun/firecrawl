@@ -2,7 +2,13 @@ import { logger as _logger } from "../../../lib/logger";
 import { Request, Response } from "express";
 import { getRedisConnection } from "../../../services/queue-service";
 import { scrapeQueue } from "../../../services/worker/nuq";
-import { pushConcurrencyLimitedJob } from "../../../lib/concurrency-limit";
+import {
+  pushConcurrencyLimitedJob,
+  pushConcurrencyLimitActiveJob,
+  getConcurrencyLimitActiveJobs,
+} from "../../../lib/concurrency-limit";
+import { RateLimiterMode } from "../../../types";
+import { getACUCTeam } from "../../auth";
 
 export async function concurrencyQueueBackfillController(
   req: Request,
@@ -72,6 +78,40 @@ export async function concurrencyQueueBackfillController(
         },
         Infinity,
       );
+    }
+
+    // start jobs up to the concurrency limit
+    const maxTeamConcurrency =
+      (await getACUCTeam(ownerId, false, true, RateLimiterMode.Crawl))
+        ?.concurrency ?? 2;
+
+    const currentActiveConcurrency = (
+      await getConcurrencyLimitActiveJobs(ownerId)
+    ).length;
+
+    const availableSlots = Math.max(
+      0,
+      maxTeamConcurrency - currentActiveConcurrency,
+    );
+
+    if (availableSlots > 0 && jobsToAdd.length > 0) {
+      const jobsToStart = jobsToAdd.slice(0, availableSlots);
+
+      for (const job of jobsToStart) {
+        await scrapeQueue.promoteJobFromBacklogOrAdd(job.id, job.data, {
+          priority: job.priority,
+          listenable: job.listenChannelId !== undefined,
+          ownerId: job.data.team_id ?? undefined,
+          groupId: job.data.crawl_id ?? undefined,
+        });
+
+        await pushConcurrencyLimitActiveJob(ownerId, job.id, 60 * 1000);
+      }
+
+      logger.info("Started jobs for team", {
+        teamId: ownerId,
+        startedCount: jobsToStart.length,
+      });
     }
 
     logger.info("Finished backfilling concurrency queue for team", {
