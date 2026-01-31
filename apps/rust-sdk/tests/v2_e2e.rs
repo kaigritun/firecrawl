@@ -3,6 +3,8 @@
 //! These tests require the following environment variables:
 //! - API_URL: The Firecrawl API URL
 //! - TEST_API_KEY: A valid API key (optional for self-hosted)
+//!
+//! Run with: cargo test --test v2_e2e -- --ignored
 
 use dotenvy::dotenv;
 use firecrawl::v2::{
@@ -14,28 +16,25 @@ use std::env;
 
 fn get_client() -> Client {
     dotenv().ok();
-    let api_url = env::var("API_URL").unwrap_or_else(|_| "http://localhost:3002".to_string());
+    let api_url = env::var("API_URL").expect("API_URL environment variable is required");
     let api_key = env::var("TEST_API_KEY").ok();
     Client::new_selfhosted(api_url, api_key).expect("Failed to create client")
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_scrape() {
     let client = get_client();
-    let result = client.scrape("https://example.com", None).await;
+    let doc = client
+        .scrape("https://example.com", None)
+        .await
+        .expect("Scrape should succeed");
 
-    match result {
-        Ok(doc) => {
-            assert!(doc.markdown.is_some());
-            println!("Scrape successful: {:?}", doc.markdown);
-        }
-        Err(e) => {
-            eprintln!("Scrape test error (may require env vars): {}", e);
-        }
-    }
+    assert!(doc.markdown.is_some(), "Response should contain markdown");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_scrape_with_options() {
     let client = get_client();
     let options = ScrapeOptions {
@@ -44,21 +43,17 @@ async fn test_v2_scrape_with_options() {
         ..Default::default()
     };
 
-    let result = client.scrape("https://example.com", options).await;
+    let doc = client
+        .scrape("https://example.com", options)
+        .await
+        .expect("Scrape with options should succeed");
 
-    match result {
-        Ok(doc) => {
-            assert!(doc.markdown.is_some());
-            assert!(doc.html.is_some());
-            println!("Scrape with options successful");
-        }
-        Err(e) => {
-            eprintln!("Scrape with options test error: {}", e);
-        }
-    }
+    assert!(doc.markdown.is_some(), "Response should contain markdown");
+    assert!(doc.html.is_some(), "Response should contain html");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_scrape_with_schema() {
     let client = get_client();
 
@@ -70,37 +65,28 @@ async fn test_v2_scrape_with_schema() {
         }
     });
 
-    let result = client
+    let data = client
         .scrape_with_schema("https://example.com", schema, Some("Extract page info"))
-        .await;
+        .await
+        .expect("Schema scrape should succeed");
 
-    match result {
-        Ok(data) => {
-            println!("Schema extraction result: {}", data);
-        }
-        Err(e) => {
-            eprintln!("Schema scrape test error: {}", e);
-        }
-    }
+    assert!(data.is_object(), "Response should be a JSON object");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_search() {
     let client = get_client();
-    let result = client.search("rust programming", None).await;
+    let response = client
+        .search("rust programming", None)
+        .await
+        .expect("Search should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            println!("Search returned results");
-        }
-        Err(e) => {
-            eprintln!("Search test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_search_with_options() {
     let client = get_client();
     let options = SearchOptions {
@@ -108,36 +94,28 @@ async fn test_v2_search_with_options() {
         ..Default::default()
     };
 
-    let result = client.search("firecrawl web scraping", options).await;
+    let response = client
+        .search("firecrawl web scraping", options)
+        .await
+        .expect("Search with options should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            println!("Search with options successful");
-        }
-        Err(e) => {
-            eprintln!("Search with options test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_map() {
     let client = get_client();
-    let result = client.map("https://example.com", None).await;
+    let response = client
+        .map("https://example.com", None)
+        .await
+        .expect("Map should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            println!("Map found {} links", response.links.len());
-        }
-        Err(e) => {
-            eprintln!("Map test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_map_with_options() {
     let client = get_client();
     let options = MapOptions {
@@ -146,46 +124,45 @@ async fn test_v2_map_with_options() {
         ..Default::default()
     };
 
-    let result = client.map("https://example.com", options).await;
+    let response = client
+        .map("https://example.com", options)
+        .await
+        .expect("Map with options should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            println!("Map with options successful");
-        }
-        Err(e) => {
-            eprintln!("Map with options test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_crawl_async() {
     let client = get_client();
-    let result = client.start_crawl("https://example.com", None).await;
+    let response = client
+        .start_crawl("https://example.com", None)
+        .await
+        .expect("Start crawl should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            assert!(!response.id.is_empty());
-            println!("Crawl started with ID: {}", response.id);
+    assert!(response.success, "Response should indicate success");
+    assert!(!response.id.is_empty(), "Response should contain job ID");
 
-            // Check status
-            let status = client.get_crawl_status(&response.id).await;
-            if let Ok(s) = status {
-                println!("Crawl status: {:?}", s.status);
-            }
+    // Check status
+    let status = client
+        .get_crawl_status(&response.id)
+        .await
+        .expect("Get crawl status should succeed");
+    assert!(
+        matches!(
+            status.status,
+            firecrawl::v2::JobStatus::Scraping | firecrawl::v2::JobStatus::Completed
+        ),
+        "Status should be scraping or completed"
+    );
 
-            // Cancel the crawl
-            let _ = client.cancel_crawl(&response.id).await;
-        }
-        Err(e) => {
-            eprintln!("Crawl async test error: {}", e);
-        }
-    }
+    // Cancel the crawl to clean up
+    let _ = client.cancel_crawl(&response.id).await;
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_crawl_sync() {
     let client = get_client();
     let options = CrawlOptions {
@@ -194,19 +171,19 @@ async fn test_v2_crawl_sync() {
         ..Default::default()
     };
 
-    let result = client.crawl("https://example.com", options).await;
+    let job = client
+        .crawl("https://example.com", options)
+        .await
+        .expect("Crawl should succeed");
 
-    match result {
-        Ok(job) => {
-            println!("Crawl completed with {} pages", job.data.len());
-        }
-        Err(e) => {
-            eprintln!("Crawl sync test error: {}", e);
-        }
-    }
+    assert!(
+        job.status == firecrawl::v2::JobStatus::Completed,
+        "Job should be completed"
+    );
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_batch_scrape_async() {
     let client = get_client();
     let urls = vec![
@@ -214,21 +191,17 @@ async fn test_v2_batch_scrape_async() {
         "https://example.org".to_string(),
     ];
 
-    let result = client.start_batch_scrape(urls, None).await;
+    let response = client
+        .start_batch_scrape(urls, None)
+        .await
+        .expect("Start batch scrape should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            assert!(!response.id.is_empty());
-            println!("Batch scrape started with ID: {}", response.id);
-        }
-        Err(e) => {
-            eprintln!("Batch scrape async test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
+    assert!(!response.id.is_empty(), "Response should contain job ID");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_batch_scrape_sync() {
     let client = get_client();
     let urls = vec!["https://example.com".to_string()];
@@ -242,19 +215,19 @@ async fn test_v2_batch_scrape_sync() {
         ..Default::default()
     };
 
-    let result = client.batch_scrape(urls, options).await;
+    let job = client
+        .batch_scrape(urls, options)
+        .await
+        .expect("Batch scrape should succeed");
 
-    match result {
-        Ok(job) => {
-            println!("Batch scrape completed with {} documents", job.data.len());
-        }
-        Err(e) => {
-            eprintln!("Batch scrape sync test error: {}", e);
-        }
-    }
+    assert!(
+        job.status == firecrawl::v2::JobStatus::Completed,
+        "Job should be completed"
+    );
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_agent_async() {
     let client = get_client();
     let options = AgentOptions {
@@ -263,21 +236,17 @@ async fn test_v2_agent_async() {
         ..Default::default()
     };
 
-    let result = client.start_agent(options).await;
+    let response = client
+        .start_agent(options)
+        .await
+        .expect("Start agent should succeed");
 
-    match result {
-        Ok(response) => {
-            assert!(response.success);
-            assert!(!response.id.is_empty());
-            println!("Agent task started with ID: {}", response.id);
-        }
-        Err(e) => {
-            eprintln!("Agent async test error: {}", e);
-        }
-    }
+    assert!(response.success, "Response should indicate success");
+    assert!(!response.id.is_empty(), "Response should contain task ID");
 }
 
 #[tokio::test]
+#[ignore = "Requires API access"]
 async fn test_v2_agent_with_schema() {
     let client = get_client();
 
@@ -296,28 +265,23 @@ async fn test_v2_agent_with_schema() {
         }
     });
 
-    let result: Result<Option<WebsiteInfo>, _> = client
+    let result: Option<WebsiteInfo> = client
         .agent_with_schema(
             vec!["https://example.com".to_string()],
             "Extract the title and description",
             schema,
         )
-        .await;
+        .await
+        .expect("Agent with schema should succeed");
 
-    match result {
-        Ok(Some(info)) => {
-            println!("Agent extracted: {:?}", info);
-        }
-        Ok(None) => {
-            println!("Agent returned no data");
-        }
-        Err(e) => {
-            eprintln!("Agent with schema test error: {}", e);
-        }
+    // Agent may or may not return data depending on the page
+    if let Some(info) = result {
+        println!("Agent extracted: {:?}", info);
     }
 }
 
 // Test that the v2 client can be created with different configurations
+// This test doesn't require API access
 #[test]
 fn test_v2_client_creation() {
     // Cloud client requires API key
