@@ -123,7 +123,6 @@ async function supaCheckTeamCredits(
     };
   }
 
-  // Fetch auto-recharge settings early since graceful billing requires it
   let isAutoRechargeEnabled = false,
     autoRechargeThreshold = 1000;
   const cacheKey = `team_auto_recharge_${team_id}`;
