@@ -252,17 +252,27 @@ app.post('/scrape', async (req: Request, res: Response) => {
   let page: Page | null = null;
 
   try {
-    // Extract user-agent from headers if provided, as it needs to be set on the context
-    const customUserAgent = headers?.['user-agent'] || headers?.['User-Agent'];
+    // Extract user-agent from headers if provided (case-insensitive), as it needs to be set on the context
+    let customUserAgent: string | undefined;
+    let headersWithoutUA: Record<string, string> | undefined;
+    
+    if (headers) {
+      const headerEntries = Object.entries(headers);
+      const userAgentEntry = headerEntries.find(([key]) => key.toLowerCase() === 'user-agent');
+      customUserAgent = userAgentEntry?.[1];
+      
+      // Filter out user-agent header (case-insensitive) since it's set on the context
+      const filteredEntries = headerEntries.filter(([key]) => key.toLowerCase() !== 'user-agent');
+      if (filteredEntries.length > 0) {
+        headersWithoutUA = Object.fromEntries(filteredEntries);
+      }
+    }
+    
     requestContext = await createContext(skip_tls_verification, customUserAgent);
     page = await requestContext.newPage();
 
-    if (headers) {
-      // Remove user-agent from headers since it's already set on the context
-      const { 'user-agent': _ua, 'User-Agent': _UA, ...otherHeaders } = headers;
-      if (Object.keys(otherHeaders).length > 0) {
-        await page.setExtraHTTPHeaders(otherHeaders);
-      }
+    if (headersWithoutUA) {
+      await page.setExtraHTTPHeaders(headersWithoutUA);
     }
 
     const result = await scrapePage(page, url, 'load', wait_after_load, timeout, check_selector);
